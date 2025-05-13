@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property ROI & Cash Flow Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Style for active tab */
+        .tab-active {
+            border-bottom-color: #3b82f6; /* Blue */
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        /* Style for inactive tabs */
+        .tab-inactive {
+            border-bottom-color: transparent;
+            color: #6b7280; /* Gray */
+        }
+        /* Input number arrows (optional, for cleaner look) */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield; /* Firefox */
+        }
+        /* Ensure table cells don't wrap unnecessarily */
+        td, th {
+            white-space: nowrap;
+        }
+        /* Add some subtle animation */
+        .tab-content {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .hidden-tab {
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+            display: none; /* Ensure it's fully hidden for layout */
+        }
+        .visible-tab {
+            opacity: 1;
+            height: auto;
+        }
+
+        /* Print specific styles */
+        @media print {
+            body {
+                background-color: #fff; /* White background for printing */
+                font-size: 10pt; /* Adjust font size for print */
+            }
+            .no-print {
+                display: none !important; /* Hide elements marked with no-print */
+            }
+            .container {
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .tab-content { /* Ensure all tab content is visible for printing */
+                display: block !important;
+                opacity: 1 !important;
+                height: auto !important;
+                page-break-before: auto; /* Avoid breaking in the middle of a section if possible */
+            }
+             .grid { /* Simplify grid for printing if needed */
+                grid-template-columns: repeat(1, minmax(0, 1fr)) !important; /* Stack columns for print */
+            }
+            h1, h2, h3 {
+                page-break-after: avoid; /* Avoid breaking after headings */
+            }
+            table {
+                width: 100% !important;
+                page-break-inside: auto; /* Allow table to break across pages if necessary */
+            }
+            tr {
+                page-break-inside: avoid; /* Try to keep rows on the same page */
+                page-break-after: auto;
+            }
+            .p-4, .p-6, .mb-6, .mt-6, .space-y-3, .space-y-4, .space-y-6 { /* Adjust spacing for print */
+                padding: 0.25rem !important;
+                margin-bottom: 0.25rem !important;
+                margin-top: 0.25rem !important;
+            }
+             .border, .shadow-lg, .rounded-lg, .bg-gray-50 { /* Remove cosmetic styles */
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                background-color: transparent !important;
+            }
+            #content-inputs .grid > div { /* Add a light border to input sections for clarity in print */
+                border: 1px solid #e5e7eb !important;
+                padding: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+            #cashFlowTableBody td, #cashFlowTableBody th {
+                 font-size: 9pt; /* Smaller font for table data */
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="container mx-auto max-w-6xl bg-white p-6 rounded-lg shadow-lg">
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">Property ROI & Cash Flow Calculator</h1>
+
+        <div class="border-b border-gray-200 mb-6 no-print">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button id="tab-inputs" onclick="switchTab('inputs')" class="tab-active py-3 px-1 border-b-2 text-sm font-medium focus:outline-none">
+                    Inputs & Assumptions
+                </button>
+                <button id="tab-summary" onclick="switchTab('summary')" class="tab-inactive py-3 px-1 border-b-2 text-sm font-medium focus:outline-none">
+                    ROI Summary
+                </button>
+                <button id="tab-cashflow" onclick="switchTab('cashflow')" class="tab-inactive py-3 px-1 border-b-2 text-sm font-medium focus:outline-none">
+                    5-Year Cash Flow
+                </button>
+            </nav>
+        </div>
+
+        <div>
+            <div id="content-inputs" class="tab-content visible-tab space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Property Information</h2>
+                        <div>
+                            <label for="propertyName" class="block text-sm font-medium text-gray-700 mb-1">Property Name/Identifier</label>
+                            <input type="text" id="propertyName" value="Example Property" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="marketValue" class="block text-sm font-medium text-gray-700 mb-1">Market Value (£)</label>
+                            <input type="text" id="marketValue" value="350,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="purchasePrice" class="block text-sm font-medium text-gray-700 mb-1">Purchase Price (£)</label>
+                            <input type="text" id="purchasePrice" value="300,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                         <div>
+                            <label for="acquisitionCosts" class="block text-sm font-medium text-gray-700 mb-1">Acquisition Costs (£)</label>
+                            <input type="text" id="acquisitionCosts" value="10,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Mortgage Details</h2>
+                        <div>
+                            <label for="loanAmount" class="block text-sm font-medium text-gray-700 mb-1">Loan Amount (£)</label>
+                            <input type="text" id="loanAmount" value="240,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="interestRate" class="block text-sm font-medium text-gray-700 mb-1">Interest Rate (% p.a.)</label>
+                            <input type="number" id="interestRate" value="5.0" step="0.01" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="loanTerm" class="block text-sm font-medium text-gray-700 mb-1">Loan Term (Years)</label>
+                            <input type="number" id="loanTerm" value="25" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="mortgageType" class="block text-sm font-medium text-gray-700 mb-1">Mortgage Type</label>
+                            <select id="mortgageType" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="repayment" selected>Repayment</option>
+                                <option value="interestOnly">Interest-Only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                         <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Income (Annual)</h2>
+                        <div>
+                            <label for="grossRentalIncome" class="block text-sm font-medium text-gray-700 mb-1">Gross Rental Income (£)</label>
+                            <input type="text" id="grossRentalIncome" value="20,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="otherIncome" class="block text-sm font-medium text-gray-700 mb-1">Other Income (£)</label>
+                            <input type="text" id="otherIncome" value="500" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                         <div>
+                            <label for="vacancyRate" class="block text-sm font-medium text-gray-700 mb-1">Vacancy Rate Allowance (%)</label>
+                            <input type="number" id="vacancyRate" value="5" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                         <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Operating Expenses (Annual)</h2>
+                        <div>
+                            <label for="managementFees" class="block text-sm font-medium text-gray-700 mb-1">Management Fees (£ or %)</label>
+                             <div class="flex space-x-2">
+                                <input type="text" id="managementFeesValue" value="10" class="number-input w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <select id="managementFeesType" class="w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="percent" selected>% of Gross Rent</option>
+                                    <option value="fixed">£ Fixed Amount</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="insurance" class="block text-sm font-medium text-gray-700 mb-1">Landlord Insurance (£)</label>
+                            <input type="text" id="insurance" value="300" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="repairs" class="block text-sm font-medium text-gray-700 mb-1">Repairs & Maintenance (£)</label>
+                            <input type="text" id="repairs" value="1,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="serviceCharges" class="block text-sm font-medium text-gray-700 mb-1">Service Charges/Ground Rent (£)</label>
+                            <input type="text" id="serviceCharges" value="1,200" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="otherOpEx" class="block text-sm font-medium text-gray-700 mb-1">Other Operating Expenses (£)</label>
+                            <input type="text" id="otherOpEx" value="250" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Tax & Growth Assumptions</h2>
+                        <div>
+                            <label for="incomeTaxRate" class="block text-sm font-medium text-gray-700 mb-1">Income Tax Rate (%)</label>
+                            <input type="number" id="incomeTaxRate" value="20" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <p class="text-xs text-gray-500 mt-1">Note: Tax calculation is simplified. Assumes mortgage interest is deductible. UK rules (Sec 24) may differ. Consult a tax advisor.</p>
+                        </div>
+                         <div>
+                            <label for="rentGrowth" class="block text-sm font-medium text-gray-700 mb-1">Annual Rental Income Growth (%)</label>
+                            <input type="number" id="rentGrowth" value="3.0" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="expenseGrowth" class="block text-sm font-medium text-gray-700 mb-1">Annual OpEx Growth (%)</label>
+                            <input type="number" id="expenseGrowth" value="2.5" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                         <div>
+                            <label for="valueGrowth" class="block text-sm font-medium text-gray-700 mb-1">Annual Property Value Growth (%)</label>
+                            <input type="number" id="valueGrowth" value="4.0" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+                 <div class="text-center mt-6 no-print">
+                     <button onclick="runCalculations()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow-md transition duration-150 ease-in-out mr-2">
+                         Calculate ROI & Cash Flow
+                     </button>
+                     <button onclick="printReport()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-md shadow-md transition duration-150 ease-in-out">
+                         Print / Save as PDF
+                     </button>
+                 </div>
+            </div>
+
+            <div id="content-summary" class="tab-content hidden-tab space-y-6">
+                 <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">ROI Summary (Year 1)</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div class="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                         <h3 class="text-lg font-semibold text-gray-700">Investment Overview</h3>
+                         <p><strong>Property:</strong> <span id="summary-propertyName">-</span></p>
+                         <p><strong>Market Value:</strong> <span id="summary-marketValue">-</span></p>
+                         <p><strong>Purchase Price:</strong> <span id="summary-purchasePrice">-</span></p>
+                         <p><strong>Loan Amount:</strong> <span id="summary-loanAmount">-</span></p>
+                         <p><strong>Down Payment:</strong> <span id="summary-downPayment">-</span></p>
+                         <p><strong>Acquisition Costs:</strong> <span id="summary-acquisitionCosts">-</span></p>
+                         <p class="font-bold text-blue-600"><strong>Total Cash Invested:</strong> <span id="summary-totalCashInvested">-</span></p>
+                     </div>
+                     <div class="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                         <h3 class="text-lg font-semibold text-gray-700">Year 1 Performance Metrics</h3>
+                         <p><strong>Net Operating Income (NOI):</strong> <span id="summary-noi">-</span></p>
+                         <p><strong>Cash Flow Before Tax (CFBT):</strong> <span id="summary-cfbt">-</span></p>
+                         <p><strong>Cash Flow After Tax (CFAT):</strong> <span id="summary-cfat">-</span></p>
+                         <p><strong>Cap Rate (on Market Value):</strong> <span id="summary-capRateMarket">-</span></p>
+                         <p><strong>Cap Rate (on Purchase Price):</strong> <span id="summary-capRatePurchase">-</span></p>
+                         <p class="font-bold text-green-600"><strong>Cash-on-Cash Return (CoC):</strong> <span id="summary-cocReturn">-</span></p>
+                         <p><strong>ROI (Simplified - CFAT + Principal):</strong> <span id="summary-simpleRoi">-</span></p>
+                     </div>
+                     <div class="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50 md:col-span-2">
+                         <h3 class="text-lg font-semibold text-gray-700">Mortgage Summary (Year 1)</h3>
+                         <p><strong>Monthly Payment:</strong> <span id="summary-monthlyPayment">-</span></p>
+                         <p><strong>Annual Payment:</strong> <span id="summary-annualPayment">-</span></p>
+                         <p><strong>Annual Principal Paid:</strong> <span id="summary-principalPaid">-</span></p>
+                         <p><strong>Annual Interest Paid:</strong> <span id="summary-interestPaid">-</span></p>
+                     </div>
+                 </div>
+            </div>
+
+            <div id="content-cashflow" class="tab-content hidden-tab space-y-6">
+                 <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">5-Year Cash Flow Projection</h2>
+                 <p class="text-sm text-gray-600">Assumed Growth Rates: Rent <span id="cf-rentGrowth"></span>% | Expenses <span id="cf-expenseGrowth"></span>% | Value <span id="cf-valueGrowth"></span>%</p>
+                 <div class="overflow-x-auto shadow-md rounded-lg">
+                     <table class="min-w-full divide-y divide-gray-200">
+                         <thead class="bg-gray-100">
+                             <tr>
+                                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Line Item</th>
+                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Year 1</th>
+                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Year 2</th>
+                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Year 3</th>
+                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Year 4</th>
+                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">Year 5</th>
+                             </tr>
+                         </thead>
+                         <tbody id="cashFlowTableBody" class="bg-white divide-y divide-gray-200 text-sm">
+                             <tr><td colspan="6" class="text-center p-4 text-gray-500">Run calculation to see projection.</td></tr>
+                         </tbody>
+                     </table>
+                 </div>
+                  <div class="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                     <h3 class="text-lg font-semibold text-gray-700">5-Year Summary</h3>
+                     <p><strong>Total Cash Flow After Tax (5 Years):</strong> <span id="summary-totalCFAT" class="font-bold">-</span></p>
+                     <p><strong>Projected Equity After 5 Years:</strong> <span id="summary-equityY5" class="font-bold">-</span></p>
+                     <p class="text-xs text-gray-500 mt-1">Equity calculation based on projected value growth and mortgage paydown.</p>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Helper Functions ---
+        const $ = (id) => document.getElementById(id);
+        // Modified getVal to handle comma-formatted numbers
+        const getVal = (id) => {
+            const element = $(id);
+            if (!element) return 0;
+            const value = element.value;
+            // For text inputs that are formatted, remove commas. For type=number, value is direct.
+            if (element.type === 'text' && value.includes(',')) {
+                return parseFloat(value.replace(/,/g, '')) || 0;
+            }
+            return parseFloat(value) || 0;
+        };
+        const getSelectVal = (id) => $(id).value;
+        const setHtml = (id, value) => {
+            const el = $(id);
+            if (el) el.innerHTML = value;
+        };
+
+        // Currency and Percentage Formatters
+        const currencyFormatter = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        const currencyFormatterWithPennies = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
+        const numberFormatter = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+        const formatCurrency = (value, showPennies = false) => {
+            return showPennies ? currencyFormatterWithPennies.format(value) : currencyFormatter.format(value);
+        }
+        const formatNumber = (value) => numberFormatter.format(value);
+
+
+        // --- Input Formatting ---
+        function formatInputAsNumber(event) {
+            const input = event.target;
+            let value = input.value.replace(/,/g, ''); // Remove existing commas
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+                input.value = formatNumber(numValue);
+            } else if (value !== "") { // If not a number but not empty, reset or show error
+                input.value = ""; // Or some indicator of invalid input
+            }
+        }
+
+        function rawValueForCalculation(inputElement) {
+            return parseFloat(inputElement.value.replace(/,/g, '')) || 0;
+        }
+
+
+        // --- Tab Switching Logic ---
+        function switchTab(tabName) {
+            const tabs = ['inputs', 'summary', 'cashflow'];
+            tabs.forEach(tab => {
+                const tabButton = $(`tab-${tab}`);
+                const tabContent = $(`content-${tab}`);
+                if (tab === tabName) {
+                    tabButton.classList.remove('tab-inactive');
+                    tabButton.classList.add('tab-active');
+                    tabContent.classList.remove('hidden-tab');
+                    tabContent.classList.add('visible-tab');
+                } else {
+                    tabButton.classList.remove('tab-active');
+                    tabButton.classList.add('tab-inactive');
+                    tabContent.classList.remove('visible-tab');
+                    tabContent.classList.add('hidden-tab');
+                }
+            });
+             if (tabName !== 'inputs') { // Recalculate if switching to an output tab
+                runCalculations();
+            }
+        }
+
+        // --- Print Function ---
+        function printReport() {
+            // Ensure all data is calculated before printing
+            runCalculations();
+            // Optionally, switch to a specific tab or make all tabs visible for printing
+            // For simplicity, current print CSS makes all tabs visible.
+            window.print();
+        }
+
+
+        // --- Core Calculation Logic ---
+        function calculateMortgage(loanAmount, annualInterestRate, loanTermYears, mortgageType) {
+            const monthlyInterestRate = (annualInterestRate / 100) / 12;
+            const numberOfPayments = loanTermYears * 12;
+            let monthlyPayment = 0;
+            let annualPayment = 0; // This will be the sum of 12 monthly payments
+            // These are for Year 1 specifically for the summary, schedule will provide per-year breakdown
+            let year1AnnualInterest = 0;
+            let year1AnnualPrincipal = 0;
+
+
+            if (loanAmount <= 0 || loanTermYears <= 0) { // Allow 0% interest rate
+                return { monthlyPayment: 0, annualPayment: 0, year1AnnualInterest: 0, year1AnnualPrincipal: 0, schedule: [] };
+            }
+
+            if (mortgageType === 'interestOnly') {
+                monthlyPayment = loanAmount * monthlyInterestRate;
+                year1AnnualInterest = monthlyPayment * 12;
+                year1AnnualPrincipal = 0;
+            } else { // Repayment
+                if (monthlyInterestRate > 0) {
+                     monthlyPayment = loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments)) / (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+                } else { // 0% interest rate repayment
+                    monthlyPayment = loanAmount / numberOfPayments;
+                }
+                // Calculate first year's interest and principal for summary
+                let balanceForYear1Calc = loanAmount;
+                for (let i = 0; i < 12; i++) {
+                    let interestThisMonth = balanceForYear1Calc * monthlyInterestRate;
+                    let principalThisMonth = monthlyPayment - interestThisMonth;
+                    if (balanceForYear1Calc < monthlyPayment && monthlyInterestRate === 0) { // Final payment for 0% loan
+                        principalThisMonth = balanceForYear1Calc;
+                        monthlyPayment = principalThisMonth; // Payment becomes what's left
+                    } else if (balanceForYear1Calc < monthlyPayment) { // Final payment adjustment for interest bearing
+                         principalThisMonth = balanceForYear1Calc;
+                         monthlyPayment = interestThisMonth + principalThisMonth;
+                    }
+
+                    year1AnnualInterest += interestThisMonth;
+                    year1AnnualPrincipal += principalThisMonth;
+                    balanceForYear1Calc -= principalThisMonth;
+                }
+            }
+            annualPayment = monthlyPayment * 12; // Total paid in a year
+
+
+            // Generate full amortization schedule for 5 years
+            let schedule = [];
+            let currentBalance = loanAmount;
+            let actualMonthlyPayment = monthlyPayment; // Store the calculated monthly payment
+
+            for (let year = 1; year <= Math.min(5, loanTermYears); year++) {
+                let yearlyInterest = 0;
+                let yearlyPrincipal = 0;
+
+                if (currentBalance <= 0.01) { // Effectively paid off
+                     schedule.push({ year, interest: 0, principal: 0, endBalance: 0, annualPaymentForYear: 0 });
+                     continue;
+                }
+
+                if (mortgageType === 'interestOnly') {
+                    yearlyInterest = currentBalance * (annualInterestRate / 100);
+                    yearlyPrincipal = 0;
+                } else { // Repayment
+                    for (let month = 1; month <= 12; month++) {
+                        let paymentNumOverall = (year - 1) * 12 + month;
+                        if (paymentNumOverall > numberOfPayments) break;
+
+                        let interestForMonth = currentBalance * monthlyInterestRate;
+                        let principalForMonth;
+
+                        // Is this the very last scheduled payment?
+                        if (paymentNumOverall === numberOfPayments) {
+                            principalForMonth = currentBalance; // Pay off remaining balance
+                            actualMonthlyPayment = interestForMonth + principalForMonth; // Adjust final payment
+                        } else {
+                            principalForMonth = actualMonthlyPayment - interestForMonth;
+                        }
+
+                        // Safety check if balance is less than principal calculated
+                        if (currentBalance < principalForMonth && paymentNumOverall < numberOfPayments) {
+                             principalForMonth = currentBalance; // Pay what's left
+                             // actualMonthlyPayment = interestForMonth + principalForMonth; // This would change ongoing payment, not ideal.
+                                                                                      // Better to let the last payment handle it.
+                        }
+                         if (principalForMonth < 0) principalForMonth = 0; // Safety
+
+                        yearlyInterest += interestForMonth;
+                        yearlyPrincipal += principalForMonth;
+                        currentBalance -= principalForMonth;
+                         if (currentBalance < 0.01) currentBalance = 0; // Consider small balances as zero
+                    }
+                }
+                 schedule.push({
+                    year: year,
+                    interest: yearlyInterest,
+                    principal: yearlyPrincipal,
+                    endBalance: currentBalance,
+                    annualPaymentForYear: mortgageType === 'interestOnly' ? yearlyInterest : yearlyInterest + yearlyPrincipal
+                });
+            }
+            // Fill remaining years in schedule if loan term is shorter than 5 years
+            for (let year = Math.min(5, loanTermYears) + 1; year <= 5; year++) {
+                 schedule.push({ year, interest: 0, principal: 0, endBalance: 0, annualPaymentForYear: 0 });
+            }
+
+
+            return { monthlyPayment: actualMonthlyPayment, annualPayment, year1AnnualInterest, year1AnnualPrincipal, schedule };
+        }
+
+        function runCalculations() {
+            // --- Get All Input Values ---
+            const propertyName = $('propertyName').value;
+            // Use rawValueForCalculation for formatted inputs
+            const marketValue = rawValueForCalculation($('marketValue'));
+            const purchasePrice = rawValueForCalculation($('purchasePrice'));
+            const acquisitionCosts = rawValueForCalculation($('acquisitionCosts'));
+            const loanAmount = rawValueForCalculation($('loanAmount'));
+            const interestRate = getVal('interestRate'); // This is type=number
+            const loanTerm = getVal('loanTerm');     // This is type=number
+            const mortgageType = getSelectVal('mortgageType');
+            const grossRentalIncome = rawValueForCalculation($('grossRentalIncome'));
+            const otherIncome = rawValueForCalculation($('otherIncome'));
+            const vacancyRate = getVal('vacancyRate') / 100;
+            const managementFeesValue = rawValueForCalculation($('managementFeesValue'));
+            const managementFeesType = getSelectVal('managementFeesType');
+            const insurance = rawValueForCalculation($('insurance'));
+            const repairs = rawValueForCalculation($('repairs'));
+            const serviceCharges = rawValueForCalculation($('serviceCharges'));
+            const otherOpEx = rawValueForCalculation($('otherOpEx'));
+            const incomeTaxRate = getVal('incomeTaxRate') / 100;
+            const rentGrowth = getVal('rentGrowth') / 100;
+            const expenseGrowth = getVal('expenseGrowth') / 100;
+            const valueGrowth = getVal('valueGrowth') / 100;
+
+            // --- Basic Calculations ---
+            const downPayment = purchasePrice - loanAmount;
+            const totalCashInvested = downPayment + acquisitionCosts;
+
+            // --- Mortgage Calculation (Initial & Schedule) ---
+            const mortgage = calculateMortgage(loanAmount, interestRate, loanTerm, mortgageType);
+
+            // --- Year 1 Calculations ---
+            let currentGrossRent = grossRentalIncome;
+            let currentOtherIncome = otherIncome;
+            let currentMgmtFeesValue = managementFeesValue; // Base value for year 1
+            let currentInsurance = insurance;
+            let currentRepairs = repairs;
+            let currentServiceCharges = serviceCharges;
+            let currentOtherOpEx = otherOpEx;
+            let currentMarketValue = marketValue;
+
+
+            const year1MortgageData = mortgage.schedule.find(s => s.year === 1) || { interest: 0, principal: 0, annualPaymentForYear: 0 };
+            const year1Data = calculateAnnualFigures(
+                currentGrossRent, currentOtherIncome, vacancyRate,
+                currentMgmtFeesValue, managementFeesType, // Pass base value for mgmt fees
+                currentInsurance, currentRepairs, currentServiceCharges, currentOtherOpEx,
+                year1MortgageData.interest,
+                incomeTaxRate,
+                year1MortgageData.annualPaymentForYear
+            );
+
+
+            // --- Update ROI Summary Tab ---
+            setHtml('summary-propertyName', propertyName || '-');
+            setHtml('summary-marketValue', formatCurrency(marketValue));
+            setHtml('summary-purchasePrice', formatCurrency(purchasePrice));
+            setHtml('summary-loanAmount', formatCurrency(loanAmount));
+            setHtml('summary-downPayment', formatCurrency(downPayment));
+            setHtml('summary-acquisitionCosts', formatCurrency(acquisitionCosts));
+            setHtml('summary-totalCashInvested', formatCurrency(totalCashInvested));
+
+            setHtml('summary-noi', formatCurrency(year1Data.noi));
+            setHtml('summary-cfbt', formatCurrency(year1Data.cfbt));
+            setHtml('summary-cfat', formatCurrency(year1Data.cfat));
+
+            const capRateMarket = marketValue > 0 ? (year1Data.noi / marketValue) * 100 : 0;
+            const capRatePurchase = purchasePrice > 0 ? (year1Data.noi / purchasePrice) * 100 : 0;
+            const cocReturn = totalCashInvested > 0 ? (year1Data.cfat / totalCashInvested) * 100 : 0;
+            const principalPaidY1 = year1MortgageData.principal;
+            const simpleRoi = totalCashInvested > 0 ? ((year1Data.cfat + principalPaidY1) / totalCashInvested) * 100 : 0;
+
+            setHtml('summary-capRateMarket', `${capRateMarket.toFixed(1)}%`);
+            setHtml('summary-capRatePurchase', `${capRatePurchase.toFixed(1)}%`);
+            setHtml('summary-cocReturn', `${cocReturn.toFixed(1)}%`);
+            setHtml('summary-simpleRoi', `${simpleRoi.toFixed(1)}%`);
+
+            setHtml('summary-monthlyPayment', formatCurrency(mortgage.monthlyPayment, true)); // Show pennies for monthly
+            setHtml('summary-annualPayment', formatCurrency(year1MortgageData.annualPaymentForYear));
+            setHtml('summary-principalPaid', formatCurrency(principalPaidY1));
+            setHtml('summary-interestPaid', formatCurrency(year1MortgageData.interest));
+
+
+            // --- Generate 5-Year Cash Flow ---
+            const cashFlowBody = $('cashFlowTableBody');
+            cashFlowBody.innerHTML = ''; // Clear previous results
+            let yearlyData = [];
+            let cumulativeCFAT = 0;
+            let finalEquity = 0;
+
+            setHtml('cf-rentGrowth', (rentGrowth * 100).toFixed(1));
+            setHtml('cf-expenseGrowth', (expenseGrowth * 100).toFixed(1));
+            setHtml('cf-valueGrowth', (valueGrowth * 100).toFixed(1));
+
+            // Reset initial values for the loop
+            currentGrossRent = grossRentalIncome;
+            currentOtherIncome = otherIncome;
+            currentMgmtFeesValue = managementFeesValue; // Base value for mgmt fees
+            currentInsurance = insurance;
+            currentRepairs = repairs;
+            currentServiceCharges = serviceCharges;
+            currentOtherOpEx = otherOpEx;
+            currentMarketValue = marketValue;
+
+
+            for (let year = 1; year <= 5; year++) {
+                const mortgageYearData = mortgage.schedule.find(s => s.year === year) || { interest: 0, principal: 0, endBalance: loanAmount, annualPaymentForYear: 0 };
+
+                const annualData = calculateAnnualFigures(
+                    currentGrossRent, currentOtherIncome, vacancyRate,
+                    // For management fees, if it's a fixed amount, it should also grow by expenseGrowth.
+                    // If it's percent, it grows with rent automatically.
+                    (managementFeesType === 'fixed' ? currentMgmtFeesValue : managementFeesValue), // Pass current fixed value or base % value
+                    managementFeesType,
+                    currentInsurance, currentRepairs, currentServiceCharges, currentOtherOpEx,
+                    mortgageYearData.interest,
+                    incomeTaxRate,
+                    mortgageYearData.annualPaymentForYear
+                );
+
+                yearlyData.push({
+                    year: year,
+                    ...annualData,
+                    grossScheduledIncome: annualData.gsi,
+                    vacancyLoss: annualData.vacancyLoss,
+                    effectiveGrossIncome: annualData.egi,
+                    totalOperatingExpenses: annualData.totalOpEx,
+                    mortgagePrincipalPaid: mortgageYearData.principal,
+                    mortgageInterestPaid: mortgageYearData.interest,
+                    totalMortgagePayment: mortgageYearData.annualPaymentForYear,
+                    projectedValue: currentMarketValue,
+                    remainingMortgage: mortgageYearData.endBalance,
+                    equity: currentMarketValue - mortgageYearData.endBalance
+                });
+
+                 cumulativeCFAT += annualData.cfat;
+
+                // Apply growth for next year
+                currentGrossRent *= (1 + rentGrowth);
+                currentOtherIncome *= (1 + rentGrowth);
+                if (managementFeesType === 'fixed') {
+                    currentMgmtFeesValue *= (1 + expenseGrowth);
+                }
+                currentInsurance *= (1 + expenseGrowth);
+                currentRepairs *= (1 + expenseGrowth);
+                currentServiceCharges *= (1 + expenseGrowth);
+                currentOtherOpEx *= (1 + expenseGrowth);
+                currentMarketValue *= (1 + valueGrowth);
+
+                 if (year === 5) {
+                    finalEquity = currentMarketValue - mortgageYearData.endBalance;
+                }
+            }
+
+            // --- Populate Cash Flow Table ---
+            const lineItems = [
+                { key: 'grossScheduledIncome', label: 'Gross Scheduled Income', bold: false },
+                { key: 'vacancyLoss', label: 'Less: Vacancy Loss', bold: false, isNegative: true },
+                { key: 'effectiveGrossIncome', label: 'Effective Gross Income (EGI)', bold: true },
+                { key: 'spacer1', label: '', bold: false, isSpacer: true },
+                { key: 'managementFees', label: 'Management Fees', bold: false, isNegative: true },
+                { key: 'insurance', label: 'Insurance', bold: false, isNegative: true },
+                { key: 'repairs', label: 'Repairs & Maintenance', bold: false, isNegative: true },
+                { key: 'serviceCharges', label: 'Service Charges/Ground Rent', bold: false, isNegative: true },
+                { key: 'otherOpEx', label: 'Other Operating Expenses', bold: false, isNegative: true },
+                { key: 'totalOperatingExpenses', label: 'Total Operating Expenses', bold: true, isNegative: true },
+                 { key: 'spacer2', label: '', bold: false, isSpacer: true },
+                { key: 'noi', label: 'Net Operating Income (NOI)', bold: true },
+                 { key: 'spacer3', label: '', bold: false, isSpacer: true },
+                { key: 'mortgageInterestPaid', label: 'Mortgage Interest Paid', bold: false, isNegative: true },
+                { key: 'mortgagePrincipalPaid', label: 'Mortgage Principal Paid', bold: false, isNegative: true },
+                { key: 'totalMortgagePayment', label: 'Total Mortgage Payment', bold: true, isNegative: true },
+                 { key: 'spacer4', label: '', bold: false, isSpacer: true },
+                { key: 'cfbt', label: 'Cash Flow Before Tax (CFBT)', bold: true },
+                 { key: 'spacer5', label: '', bold: false, isSpacer: true },
+                { key: 'incomeTax', label: 'Income Tax Payable', bold: false, isNegative: true },
+                { key: 'cfat', label: 'Cash Flow After Tax (CFAT)', bold: true, highlightPositive: true },
+                 { key: 'spacer6', label: '', bold: false, isSpacer: true },
+                 { key: 'cumulativeCFAT', label: 'Cumulative CFAT', bold: false },
+                 { key: 'spacer7', label: '', bold: false, isSpacer: true },
+                { key: 'projectedValue', label: 'Projected Property Value', bold: false },
+                { key: 'remainingMortgage', label: 'Remaining Mortgage Balance', bold: false },
+                { key: 'equity', label: 'Projected Equity', bold: true },
+            ];
+
+             let cumulativeCFATTracker = 0;
+
+            lineItems.forEach(item => {
+                const row = cashFlowBody.insertRow();
+                const labelCell = row.insertCell();
+                labelCell.innerHTML = `<span class="${item.bold ? 'font-semibold' : ''} ${item.isNegative ? 'pl-4' : ''}">${item.label}</span>`; // Indent negative sub-items slightly
+
+                if (item.isSpacer) {
+                    for (let i = 0; i < 5; i++) row.insertCell().innerHTML = '';
+                    labelCell.colSpan = 6;
+                    labelCell.className = "py-1";
+                    return;
+                }
+
+                for (let year = 1; year <= 5; year++) {
+                    const cell = row.insertCell();
+                    cell.className = 'px-4 py-2 text-right';
+                    const data = yearlyData[year - 1];
+                    let value = data[item.key];
+
+                    if (item.key === 'cumulativeCFAT') {
+                        cumulativeCFATTracker += data.cfat; // Use the cfat from the current year's data
+                        value = cumulativeCFATTracker;
+                    }
+
+                    if (typeof value === 'number') {
+                        let displayValue = formatCurrency(value);
+                        if (item.isNegative && value !== 0) {
+                            displayValue = `(${formatCurrency(Math.abs(value))})`;
+                            cell.classList.add('text-red-600');
+                        } else if (item.highlightPositive && value > 0) {
+                             cell.classList.add('text-green-700', 'font-semibold');
+                        } else if (value < 0 && !item.isNegative) { // e.g. CFBT can be negative
+                             cell.classList.add('text-red-600');
+                             displayValue = `(${formatCurrency(Math.abs(value))})`; // Show with parentheses
+                        }
+                        cell.innerHTML = displayValue;
+                    } else {
+                        cell.innerHTML = '-';
+                    }
+                }
+            });
+
+             setHtml('summary-totalCFAT', formatCurrency(cumulativeCFAT));
+             setHtml('summary-equityY5', formatCurrency(finalEquity));
+        }
+
+
+        function calculateAnnualFigures(grossRent, otherIncome, vacancyRate, mgmtFeesVal, mgmtFeesType, currentInsurance, currentRepairs, currentServiceCharges, currentOtherOpEx, interestPaid, taxRate, annualMortgagePaymentForYear) {
+            const gsi = grossRent + otherIncome;
+            const vacancyLoss = grossRent * vacancyRate;
+            const egi = gsi - vacancyLoss;
+
+            let managementFeesCalculated = 0;
+            if (mgmtFeesType === 'percent') {
+                // mgmtFeesVal is the percentage (e.g., 10 for 10%)
+                managementFeesCalculated = egi * (mgmtFeesVal / 100);
+            } else {
+                // mgmtFeesVal is the fixed amount for the current year (already grown)
+                managementFeesCalculated = mgmtFeesVal;
+            }
+
+            const totalOpEx = managementFeesCalculated + currentInsurance + currentRepairs + currentServiceCharges + currentOtherOpEx;
+            const noi = egi - totalOpEx;
+            const cfbt = noi - annualMortgagePaymentForYear;
+            const taxableIncome = Math.max(0, noi - interestPaid);
+            const incomeTax = taxableIncome * taxRate;
+            const cfat = cfbt - incomeTax;
+
+            return {
+                gsi, vacancyLoss, egi,
+                managementFees: managementFeesCalculated, // Store the calculated fee
+                insurance: currentInsurance,
+                repairs: currentRepairs,
+                serviceCharges: currentServiceCharges,
+                otherOpEx: currentOtherOpEx,
+                totalOpEx, noi, interestPaid, cfbt, incomeTax, cfat
+            };
+        }
+
+        // --- Initial Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const numberInputs = document.querySelectorAll('input.number-input');
+            numberInputs.forEach(input => {
+                input.addEventListener('blur', formatInputAsNumber); // Format on blur
+                input.addEventListener('input', (event) => { // Allow typing numbers and one decimal
+                    // Basic filtering, can be improved
+                    // event.target.value = event.target.value.replace(/[^0-9.,]/g, '');
+                });
+                // Initial format for pre-filled values
+                formatInputAsNumber({target: input});
+            });
+
+
+            const allInputs = document.querySelectorAll('#content-inputs input, #content-inputs select');
+            allInputs.forEach(input => {
+                input.addEventListener('change', runCalculations);
+            });
+            runCalculations();
+        });
+
+    </script>
+
+</body>
+</html>
