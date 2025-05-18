@@ -51,6 +51,13 @@
             opacity: 1;
             height: auto;
         }
+        .sdlt-options-hidden {
+            display: none;
+        }
+        .read-only-input {
+            background-color: #e9ecef; /* Light gray for read-only */
+            cursor: not-allowed;
+        }
 
         /* Print specific styles */
         @media print {
@@ -72,7 +79,8 @@
                 display: block !important;
                 opacity: 1 !important;
                 height: auto !important;
-                page-break-before: auto; /* Avoid breaking in the middle of a section if possible */
+                page-break-before: auto;
+                margin-bottom: 1rem; /* Add some space between printed tabs */
             }
              .grid { /* Simplify grid for printing if needed */
                 grid-template-columns: repeat(1, minmax(0, 1fr)) !important; /* Stack columns for print */
@@ -99,7 +107,7 @@
                 border-radius: 0 !important;
                 background-color: transparent !important;
             }
-            #content-inputs .grid > div { /* Add a light border to input sections for clarity in print */
+            #content-inputs .grid > div, #content-stampduty .grid > div { /* Add a light border to input sections for clarity in print */
                 border: 1px solid #e5e7eb !important;
                 padding: 0.5rem !important;
                 margin-bottom: 0.5rem !important;
@@ -107,17 +115,33 @@
             #cashFlowTableBody td, #cashFlowTableBody th {
                  font-size: 9pt; /* Smaller font for table data */
             }
+             #sdltResultContainer {
+                border: 1px solid #ccc !important;
+                padding: 0.5rem !important;
+            }
+            .read-only-input { /* Ensure read-only inputs look normal in print */
+                background-color: #fff !important;
+                border: 1px solid #ccc !important; /* Add a light border for clarity */
+            }
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="container mx-auto max-w-6xl bg-white p-6 rounded-lg shadow-lg">
-        <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">Property ROI & Cash Flow Calculator</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Property ROI & Cash Flow Calculator</h1>
+            <button onclick="resetAllToDefaults()" class="no-print bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm transition duration-150 ease-in-out">
+                Reset All to Defaults
+            </button>
+        </div>
 
         <div class="border-b border-gray-200 mb-6 no-print">
             <nav class="-mb-px flex space-x-6" aria-label="Tabs">
                 <button id="tab-inputs" onclick="switchTab('inputs')" class="tab-active py-3 px-1 border-b-2 text-sm font-medium focus:outline-none">
                     Inputs & Assumptions
+                </button>
+                <button id="tab-stampduty" onclick="switchTab('stampduty')" class="tab-inactive py-3 px-1 border-b-2 text-sm font-medium focus:outline-none">
+                    Stamp Duty Calculator
                 </button>
                 <button id="tab-summary" onclick="switchTab('summary')" class="tab-inactive py-3 px-1 border-b-2 text-sm font-medium focus:outline-none">
                     ROI Summary
@@ -135,41 +159,61 @@
                         <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Property Information</h2>
                         <div>
                             <label for="propertyName" class="block text-sm font-medium text-gray-700 mb-1">Property Name/Identifier</label>
-                            <input type="text" id="propertyName" value="Example Property" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="text" id="propertyName" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
                             <label for="marketValue" class="block text-sm font-medium text-gray-700 mb-1">Market Value (£)</label>
-                            <input type="text" id="marketValue" value="350,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="text" id="marketValue" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
-                            <label for="purchasePrice" class="block text-sm font-medium text-gray-700 mb-1">Purchase Price (£)</label>
-                            <input type="text" id="purchasePrice" value="300,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <label for="discountToMarketValue" class="block text-sm font-medium text-gray-700 mb-1">Discount to Market Value (%)</label>
+                            <input type="number" id="discountToMarketValue" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="purchasePrice" class="block text-sm font-medium text-gray-700 mb-1">Purchase Price (£) (Calculated)</label>
+                            <input type="text" id="purchasePrice" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm read-only-input" readonly>
                         </div>
                          <div>
-                            <label for="acquisitionCosts" class="block text-sm font-medium text-gray-700 mb-1">Acquisition Costs (£)</label>
-                            <input type="text" id="acquisitionCosts" value="10,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <label for="loanToValue" class="block text-sm font-medium text-gray-700 mb-1">Loan to Value (LTV) (%)</label>
+                            <input type="number" id="loanToValue" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                         <div>
+                            <label for="loanAmount" class="block text-sm font-medium text-gray-700 mb-1">Loan Amount (£) (Calculated)</label>
+                            <input type="text" id="loanAmount" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm read-only-input" readonly>
+                        </div>
+                        <div>
+                            <label for="depositAmount" class="block text-sm font-medium text-gray-700 mb-1">Deposit Amount (£) (Calculated)</label>
+                            <input type="text" id="depositAmount" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm read-only-input" readonly>
+                        </div>
+                         <div>
+                            <label for="otherAcquisitionCosts" class="block text-sm font-medium text-gray-700 mb-1">Other Acquisition Costs (£) (Legal, Survey, etc.)</label>
+                            <input type="text" id="otherAcquisitionCosts" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="stampDutyCost" class="block text-sm font-medium text-gray-700 mb-1">Stamp Duty (SDLT) (£) (from SDLT Calc)</label>
+                            <input type="text" id="stampDutyCost" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm read-only-input" readonly>
+                        </div>
+                         <div class="mt-2 pt-2 border-t">
+                            <p class="text-sm font-medium text-gray-700">Total Upfront Cash Costs (£):</p>
+                            <p id="totalUpfrontCashCostsDisplay" class="text-lg font-bold text-blue-700">-</p>
                         </div>
                     </div>
 
                     <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
                         <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Mortgage Details</h2>
                         <div>
-                            <label for="loanAmount" class="block text-sm font-medium text-gray-700 mb-1">Loan Amount (£)</label>
-                            <input type="text" id="loanAmount" value="240,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
                             <label for="interestRate" class="block text-sm font-medium text-gray-700 mb-1">Interest Rate (% p.a.)</label>
-                            <input type="number" id="interestRate" value="5.0" step="0.01" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="number" id="interestRate" step="0.01" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
                             <label for="loanTerm" class="block text-sm font-medium text-gray-700 mb-1">Loan Term (Years)</label>
-                            <input type="number" id="loanTerm" value="25" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="number" id="loanTerm" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
                             <label for="mortgageType" class="block text-sm font-medium text-gray-700 mb-1">Mortgage Type</label>
                             <select id="mortgageType" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option value="repayment" selected>Repayment</option>
                                 <option value="interestOnly">Interest-Only</option>
+                                <option value="repayment">Repayment</option>
                             </select>
                         </div>
                     </div>
@@ -177,16 +221,12 @@
                     <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
                          <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Income (Annual)</h2>
                         <div>
-                            <label for="grossRentalIncome" class="block text-sm font-medium text-gray-700 mb-1">Gross Rental Income (£)</label>
-                            <input type="text" id="grossRentalIncome" value="20,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label for="otherIncome" class="block text-sm font-medium text-gray-700 mb-1">Other Income (£)</label>
-                            <input type="text" id="otherIncome" value="500" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <label for="grossRentalIncome" class="block text-sm font-medium text-gray-700 mb-1">Gross Rental Income (£) (Default 10% of Purchase Price)</label>
+                            <input type="text" id="grossRentalIncome" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                          <div>
                             <label for="vacancyRate" class="block text-sm font-medium text-gray-700 mb-1">Vacancy Rate Allowance (%)</label>
-                            <input type="number" id="vacancyRate" value="5" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="number" id="vacancyRate" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </div>
 
@@ -195,28 +235,24 @@
                         <div>
                             <label for="managementFees" class="block text-sm font-medium text-gray-700 mb-1">Management Fees (£ or %)</label>
                              <div class="flex space-x-2">
-                                <input type="text" id="managementFeesValue" value="10" class="number-input w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <input type="text" id="managementFeesValue" class="number-input w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                                 <select id="managementFeesType" class="w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="percent" selected>% of Gross Rent</option>
+                                    <option value="percent"> % of Gross Rent</option>
                                     <option value="fixed">£ Fixed Amount</option>
                                 </select>
                             </div>
                         </div>
                         <div>
                             <label for="insurance" class="block text-sm font-medium text-gray-700 mb-1">Landlord Insurance (£)</label>
-                            <input type="text" id="insurance" value="300" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="text" id="insurance" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
                             <label for="repairs" class="block text-sm font-medium text-gray-700 mb-1">Repairs & Maintenance (£)</label>
-                            <input type="text" id="repairs" value="1,000" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label for="serviceCharges" class="block text-sm font-medium text-gray-700 mb-1">Service Charges/Ground Rent (£)</label>
-                            <input type="text" id="serviceCharges" value="1,200" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="text" id="repairs" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
                             <label for="otherOpEx" class="block text-sm font-medium text-gray-700 mb-1">Other Operating Expenses (£)</label>
-                            <input type="text" id="otherOpEx" value="250" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="text" id="otherOpEx" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </div>
 
@@ -224,32 +260,82 @@
                         <h2 class="text-lg font-semibold text-gray-700 border-b pb-2">Tax & Growth Assumptions</h2>
                         <div>
                             <label for="incomeTaxRate" class="block text-sm font-medium text-gray-700 mb-1">Income Tax Rate (%)</label>
-                            <input type="number" id="incomeTaxRate" value="20" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="number" id="incomeTaxRate" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                             <p class="text-xs text-gray-500 mt-1">Note: Tax calculation is simplified. Assumes mortgage interest is deductible. UK rules (Sec 24) may differ. Consult a tax advisor.</p>
                         </div>
                          <div>
                             <label for="rentGrowth" class="block text-sm font-medium text-gray-700 mb-1">Annual Rental Income Growth (%)</label>
-                            <input type="number" id="rentGrowth" value="3.0" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="number" id="rentGrowth" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
                             <label for="expenseGrowth" class="block text-sm font-medium text-gray-700 mb-1">Annual OpEx Growth (%)</label>
-                            <input type="number" id="expenseGrowth" value="2.5" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="number" id="expenseGrowth" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                          <div>
                             <label for="valueGrowth" class="block text-sm font-medium text-gray-700 mb-1">Annual Property Value Growth (%)</label>
-                            <input type="number" id="valueGrowth" value="4.0" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="number" id="valueGrowth" step="0.1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </div>
                 </div>
                  <div class="text-center mt-6 no-print">
                      <button onclick="runCalculations()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow-md transition duration-150 ease-in-out mr-2">
-                         Calculate ROI & Cash Flow
+                         Calculate Overall ROI & Cash Flow
                      </button>
                      <button onclick="printReport()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-md shadow-md transition duration-150 ease-in-out">
                          Print / Save as PDF
                      </button>
                  </div>
             </div>
+
+            <div id="content-stampduty" class="tab-content hidden-tab space-y-6">
+                <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Stamp Duty Land Tax (SDLT) Calculator (England & NI)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <h3 class="text-lg font-semibold text-gray-700">Property & Buyer Details</h3>
+                        <div>
+                            <label for="sdltPurchasePrice" class="block text-sm font-medium text-gray-700 mb-1">Property Purchase Price (£) (from Inputs Tab)</label>
+                            <input type="text" id="sdltPurchasePrice" class="number-input w-full p-2 border border-gray-300 rounded-md shadow-sm read-only-input" readonly>
+                            </div>
+                        <div>
+                            <label for="sdltPropertyType" class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                            <select id="sdltPropertyType" onchange="toggleResidentialOptions()" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="residential">Residential</option>
+                                <option value="commercial">Commercial / Mixed-Use</option>
+                                <option value="sharePurchase">Share Purchase (0.5% duty)</option>
+                            </select>
+                        </div>
+                        <div id="sdltResidentialOptions" class="space-y-3"> <label class="block text-sm font-medium text-gray-700">Residential Buyer Type / Scenario</label>
+                            <div class="flex items-center">
+                                <input type="radio" id="sdltResidentialStandard" name="sdltResidentialScenario" value="standard" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                                <label for="sdltResidentialStandard" class="ml-2 block text-sm text-gray-900">Standard Rate (e.g., replacing main residence)</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="sdltResidentialFTB" name="sdltResidentialScenario" value="ftb" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                                <label for="sdltResidentialFTB" class="ml-2 block text-sm text-gray-900">First-Time Buyer (property up to £625k)</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="sdltResidentialHigher" name="sdltResidentialScenario" value="higher" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                                <label for="sdltResidentialHigher" class="ml-2 block text-sm text-gray-900">Higher Rate (Company purchase / Additional property)</label>
+                            </div>
+                        </div>
+                         <p class="text-xs text-gray-500 mt-2">Disclaimer: Residential SDLT rates shown are for transactions from 1 April 2025 for England & NI. Rates and rules can change. Always verify with official HMRC guidance or a qualified advisor.</p>
+                    </div>
+
+                    <div class="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <h3 class="text-lg font-semibold text-gray-700">SDLT Calculation Result</h3>
+                        <div id="sdltResultContainer" class="p-4 bg-blue-50 rounded-md min-h-[100px]">
+                            <p class="text-sm text-gray-700">Calculated Stamp Duty:</p>
+                            <p id="sdltCalculatedAmount" class="text-2xl font-bold text-blue-700">-</p>
+                            <p id="sdltEffectiveRate" class="text-sm text-gray-600"></p>
+                        </div>
+                        <button onclick="calculateAndDisplaySDLT(true)" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out">
+                            Recalculate & Apply SDLT
+                        </button>
+                         <p class="text-xs text-gray-500 mt-1">SDLT is automatically applied to the 'Inputs & Assumptions' tab upon calculation or when relevant inputs change.</p>
+                    </div>
+                </div>
+            </div>
+
 
             <div id="content-summary" class="tab-content hidden-tab space-y-6">
                  <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">ROI Summary (Year 1)</h2>
@@ -260,9 +346,10 @@
                          <p><strong>Market Value:</strong> <span id="summary-marketValue">-</span></p>
                          <p><strong>Purchase Price:</strong> <span id="summary-purchasePrice">-</span></p>
                          <p><strong>Loan Amount:</strong> <span id="summary-loanAmount">-</span></p>
-                         <p><strong>Down Payment:</strong> <span id="summary-downPayment">-</span></p>
-                         <p><strong>Acquisition Costs:</strong> <span id="summary-acquisitionCosts">-</span></p>
-                         <p class="font-bold text-blue-600"><strong>Total Cash Invested:</strong> <span id="summary-totalCashInvested">-</span></p>
+                         <p><strong>Deposit Amount:</strong> <span id="summary-downPayment">-</span></p>
+                         <p><strong>Other Acquisition Costs:</strong> <span id="summary-otherAcquisitionCosts">-</span></p>
+                         <p><strong>Stamp Duty (SDLT):</strong> <span id="summary-stampDutyCost">-</span></p>
+                         <p class="font-bold text-blue-600"><strong>Total Cash Invested (Upfront):</strong> <span id="summary-totalCashInvested">-</span></p>
                      </div>
                      <div class="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
                          <h3 class="text-lg font-semibold text-gray-700">Year 1 Performance Metrics</h3>
@@ -315,24 +402,44 @@
     </div>
 
     <script>
+        let userManuallySetGrossRentalIncome = false;
+
         // --- Helper Functions ---
         const $ = (id) => document.getElementById(id);
-        // Modified getVal to handle comma-formatted numbers
         const getVal = (id) => {
             const element = $(id);
             if (!element) return 0;
             const value = element.value;
-            // For text inputs that are formatted, remove commas. For type=number, value is direct.
-            if (element.type === 'text' && value.includes(',')) {
+            if (element.classList.contains('number-input') || element.type === 'text') {
                 return parseFloat(value.replace(/,/g, '')) || 0;
             }
             return parseFloat(value) || 0;
         };
+        const getRawValue = (id) => {
+            const element = $(id);
+            if (!element) return 0;
+            return parseFloat(element.value) || 0;
+        };
+
         const getSelectVal = (id) => $(id).value;
         const setHtml = (id, value) => {
             const el = $(id);
             if (el) el.innerHTML = value;
         };
+        const setInputValue = (id, value, isFormattedNumber = false) => {
+            const el = $(id);
+            if (el) {
+                if (el.type === 'number' && !isFormattedNumber) {
+                    el.value = value;
+                } else {
+                    el.value = isFormattedNumber ? formatNumber(value) : value;
+                    if (isFormattedNumber && el.classList.contains('number-input')) {
+                        formatInputAsNumber({target: el});
+                    }
+                }
+            }
+        };
+
 
         // Currency and Percentage Formatters
         const currencyFormatter = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -342,32 +449,124 @@
         const formatCurrency = (value, showPennies = false) => {
             return showPennies ? currencyFormatterWithPennies.format(value) : currencyFormatter.format(value);
         }
-        const formatNumber = (value) => numberFormatter.format(value);
+        const formatNumber = (value) => {
+            if (isNaN(parseFloat(value))) return '';
+            return numberFormatter.format(value);
+        }
 
 
         // --- Input Formatting ---
         function formatInputAsNumber(event) {
             const input = event.target;
-            let value = input.value.replace(/,/g, ''); // Remove existing commas
+            if (input.readOnly) return;
+
+            let value = input.value.replace(/,/g, '');
+            if (event.type !== 'blur') {
+                let charValue = value.replace(/[^\d.]/g, "");
+                const parts = charValue.split('.');
+                if (parts.length > 2) {
+                    charValue = parts[0] + "." + parts.slice(1).join("");
+                }
+                input.value = charValue;
+                return;
+            }
+            value = value.replace(/[^\d.]/g, '');
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
             const numValue = parseFloat(value);
             if (!isNaN(numValue)) {
                 input.value = formatNumber(numValue);
-            } else if (value !== "") { // If not a number but not empty, reset or show error
-                input.value = ""; // Or some indicator of invalid input
+            } else if (value === "" || value === ".") {
+                input.value = "";
+            } else {
+                 input.value = "";
             }
         }
 
         function rawValueForCalculation(inputElement) {
+            if (!inputElement) return 0;
             return parseFloat(inputElement.value.replace(/,/g, '')) || 0;
+        }
+
+
+        // --- Dynamic Calculation Chain ---
+        function handleMarketValueChange() {
+            updateCalculatedPurchasePrice();
+        }
+
+        function handleDiscountChange() {
+            updateCalculatedPurchasePrice();
+        }
+
+        function updateCalculatedPurchasePrice() {
+            const marketVal = rawValueForCalculation($('marketValue'));
+            const discountPercent = getRawValue('discountToMarketValue');
+            const newPurchasePrice = marketVal * (1 - (discountPercent / 100));
+            setInputValue('purchasePrice', newPurchasePrice, true);
+            setInputValue('sdltPurchasePrice', newPurchasePrice, true);
+            updateCalculatedLoanAmount(); // Chain update to loan amount
+            updateGrossRentalIncomeDefault(); // Chain update to gross rental income
+            calculateAndDisplaySDLT(true); // This will also call runCalculations
+        }
+
+        function handleLTVChange() {
+            updateCalculatedLoanAmount();
+        }
+
+        function updateCalculatedLoanAmount() {
+            const purchaseP = rawValueForCalculation($('purchasePrice'));
+            const ltvPercent = getRawValue('loanToValue');
+            const newLoanAmount = purchaseP * (ltvPercent / 100);
+            setInputValue('loanAmount', newLoanAmount, true);
+            updateCalculatedDepositAmount();
+        }
+
+        function updateCalculatedDepositAmount() {
+            const purchaseP = rawValueForCalculation($('purchasePrice'));
+            const loanAmt = rawValueForCalculation($('loanAmount'));
+            const deposit = purchaseP - loanAmt;
+            setInputValue('depositAmount', deposit, true);
+            runCalculations(); // Final step in this property/loan chain
+        }
+
+        function handleGrossRentalIncomeInput(event) {
+            formatInputAsNumber(event); // Format first
+            userManuallySetGrossRentalIncome = event.target.value.trim() !== "";
+            runCalculations(); // Recalculate if manually changed
+        }
+         function handleGrossRentalIncomeBlur(event) {
+            formatInputAsNumber(event); // Format first
+            if (event.target.value.trim() === "") {
+                userManuallySetGrossRentalIncome = false;
+                updateGrossRentalIncomeDefault(); // Revert to default if cleared
+            } else {
+                 userManuallySetGrossRentalIncome = true;
+            }
+            runCalculations();
+        }
+
+
+        function updateGrossRentalIncomeDefault() {
+            if (!userManuallySetGrossRentalIncome) {
+                const purchaseP = rawValueForCalculation($('purchasePrice'));
+                const newGrossRentalIncome = purchaseP * 0.10; // 10% of purchase price
+                setInputValue('grossRentalIncome', newGrossRentalIncome, true);
+            }
+            // No need to call runCalculations here as this function is typically called
+            // as part of a chain that will end with runCalculations.
         }
 
 
         // --- Tab Switching Logic ---
         function switchTab(tabName) {
-            const tabs = ['inputs', 'summary', 'cashflow'];
+            const tabs = ['inputs', 'stampduty', 'summary', 'cashflow'];
             tabs.forEach(tab => {
                 const tabButton = $(`tab-${tab}`);
                 const tabContent = $(`content-${tab}`);
+                if (!tabButton || !tabContent) return;
+
                 if (tab === tabName) {
                     tabButton.classList.remove('tab-inactive');
                     tabButton.classList.add('tab-active');
@@ -380,34 +579,136 @@
                     tabContent.classList.add('hidden-tab');
                 }
             });
-             if (tabName !== 'inputs') { // Recalculate if switching to an output tab
+             if (tabName === 'summary' || tabName === 'cashflow') {
                 runCalculations();
             }
         }
 
         // --- Print Function ---
         function printReport() {
-            // Ensure all data is calculated before printing
             runCalculations();
-            // Optionally, switch to a specific tab or make all tabs visible for printing
-            // For simplicity, current print CSS makes all tabs visible.
             window.print();
         }
 
+        // --- SDLT Specific Functions ---
+        function toggleResidentialOptions() {
+            const propertyType = getSelectVal('sdltPropertyType');
+            const residentialOptionsDiv = $('sdltResidentialOptions');
+            if (propertyType === 'residential') {
+                residentialOptionsDiv.classList.remove('sdlt-options-hidden');
+            } else {
+                residentialOptionsDiv.classList.add('sdlt-options-hidden');
+            }
+             calculateAndDisplaySDLT(true);
+        }
 
-        // --- Core Calculation Logic ---
+        let lastCalculatedSDLT = 0;
+
+        function calculateAndDisplaySDLT(autoApplyToInputs = false) {
+            const purchasePrice = rawValueForCalculation($('sdltPurchasePrice'));
+            const propertyType = getSelectVal('sdltPropertyType');
+            let residentialScenario = null;
+            if (propertyType === 'residential') {
+                const scenarioElement = document.querySelector('input[name="sdltResidentialScenario"]:checked');
+                if (scenarioElement) residentialScenario = scenarioElement.value;
+            }
+
+            lastCalculatedSDLT = calculateSDLT(purchasePrice, propertyType, residentialScenario);
+            setHtml('sdltCalculatedAmount', formatCurrency(lastCalculatedSDLT, true));
+
+            if (purchasePrice > 0) {
+                const effectiveRate = (lastCalculatedSDLT / purchasePrice) * 100;
+                setHtml('sdltEffectiveRate', `Effective Rate: ${effectiveRate.toFixed(2)}%`);
+            } else {
+                setHtml('sdltEffectiveRate', '');
+            }
+
+            if (autoApplyToInputs) {
+                setInputValue('stampDutyCost', lastCalculatedSDLT, true);
+                runCalculations();
+            }
+        }
+
+        function calculateSDLT(price, type, resScenario) {
+            let tax = 0;
+            if (price <= 0) return 0;
+
+            if (type === 'sharePurchase') {
+                return price * 0.005; // 0.5% for share purchase
+            }
+
+            if (type === 'residential') {
+                // Rates from 1 April 2025
+                const newStandardRates = [
+                    { threshold: 0, rate: 0 },
+                    { threshold: 125000, rate: 0.02 },
+                    { threshold: 250000, rate: 0.05 },
+                    { threshold: 925000, rate: 0.10 },
+                    { threshold: 1500000, rate: 0.12 }
+                ];
+
+                let isFTBEligible = false;
+                if (resScenario === 'ftb' && price <= 625000) {
+                     isFTBEligible = true;
+                }
+
+                if (isFTBEligible) {
+                    // FTB relief: 0% on up to £425k, 5% on portion from £425,001 to £625k
+                    if (price <= 425000) {
+                        tax = 0;
+                    } else { // price between 425,001 and 625,000
+                        tax = (price - 425000) * 0.05;
+                    }
+                } else {
+                    // Standard or Higher Rates using new 2025 bands
+                    const surcharge = (resScenario === 'higher' && price >= 40000) ? 0.03 : 0;
+                    let remainingPrice = price;
+                    let previousThreshold = 0;
+
+                    for (let i = newStandardRates.length - 1; i >= 0; i--) {
+                        if (price > newStandardRates[i].threshold) {
+                            tax += (price - newStandardRates[i].threshold) * (newStandardRates[i].rate + surcharge);
+                            if (i > 0) { // Subtract the already taxed portion for the next lower band
+                                tax -= (price - newStandardRates[i].threshold) * (newStandardRates[i-1].rate + surcharge);
+                            }
+                        }
+                    }
+                     // Simpler way to apply new tiered rates:
+                    tax = 0; // Reset tax for clearer tiered calculation
+                    let tempPrice = price;
+
+                    if (tempPrice > 1500000) { tax += (tempPrice - 1500000) * (0.12 + surcharge); tempPrice = 1500000; }
+                    if (tempPrice > 925000)  { tax += (tempPrice - 925000)  * (0.10 + surcharge); tempPrice = 925000;  }
+                    if (tempPrice > 250000)  { tax += (tempPrice - 250000)  * (0.05 + surcharge); tempPrice = 250000;  }
+                    if (tempPrice > 125000)  { tax += (tempPrice - 125000)  * (0.02 + surcharge); tempPrice = 125000;  }
+                    // Up to 125,000 is 0% + surcharge
+                    tax += tempPrice * (0.00 + surcharge);
+
+
+                    if (resScenario === 'higher' && price < 40000) {
+                        tax = 0; // No higher rate SDLT if property is less than £40,000
+                    }
+                }
+            } else { // Commercial / Mixed-Use
+                if (price <= 150000) { tax = 0; }
+                else if (price <= 250000) { tax = (price - 150000) * 0.02; }
+                else { tax = (100000 * 0.02) + ((price - 250000) * 0.05); }
+            }
+            return Math.max(0, tax);
+        }
+
+
+        // --- Core Calculation Logic (Main ROI) ---
         function calculateMortgage(loanAmount, annualInterestRate, loanTermYears, mortgageType) {
             const monthlyInterestRate = (annualInterestRate / 100) / 12;
             const numberOfPayments = loanTermYears * 12;
             let monthlyPayment = 0;
-            let annualPayment = 0; // This will be the sum of 12 monthly payments
-            // These are for Year 1 specifically for the summary, schedule will provide per-year breakdown
             let year1AnnualInterest = 0;
             let year1AnnualPrincipal = 0;
 
-
-            if (loanAmount <= 0 || loanTermYears <= 0) { // Allow 0% interest rate
-                return { monthlyPayment: 0, annualPayment: 0, year1AnnualInterest: 0, year1AnnualPrincipal: 0, schedule: [] };
+            if (loanAmount <= 0 || loanTermYears <= 0) {
+                const emptySchedule = Array(5).fill(null).map((_, i) => ({ year: i + 1, interest: 0, principal: 0, endBalance: loanAmount, annualPaymentForYear: 0 }));
+                return { monthlyPayment: 0, annualPayment:0, year1AnnualInterest: 0, year1AnnualPrincipal: 0, schedule: emptySchedule };
             }
 
             if (mortgageType === 'interestOnly') {
@@ -417,382 +718,333 @@
             } else { // Repayment
                 if (monthlyInterestRate > 0) {
                      monthlyPayment = loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments)) / (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
-                } else { // 0% interest rate repayment
-                    monthlyPayment = loanAmount / numberOfPayments;
+                } else {
+                    monthlyPayment = numberOfPayments > 0 ? loanAmount / numberOfPayments : 0;
                 }
-                // Calculate first year's interest and principal for summary
                 let balanceForYear1Calc = loanAmount;
                 for (let i = 0; i < 12; i++) {
                     let interestThisMonth = balanceForYear1Calc * monthlyInterestRate;
                     let principalThisMonth = monthlyPayment - interestThisMonth;
-                    if (balanceForYear1Calc < monthlyPayment && monthlyInterestRate === 0) { // Final payment for 0% loan
-                        principalThisMonth = balanceForYear1Calc;
-                        monthlyPayment = principalThisMonth; // Payment becomes what's left
-                    } else if (balanceForYear1Calc < monthlyPayment) { // Final payment adjustment for interest bearing
-                         principalThisMonth = balanceForYear1Calc;
-                         monthlyPayment = interestThisMonth + principalThisMonth;
-                    }
-
+                    if (principalThisMonth > balanceForYear1Calc) principalThisMonth = balanceForYear1Calc;
+                    if (principalThisMonth < 0) principalThisMonth = 0;
                     year1AnnualInterest += interestThisMonth;
                     year1AnnualPrincipal += principalThisMonth;
                     balanceForYear1Calc -= principalThisMonth;
+                    if (balanceForYear1Calc < 0) balanceForYear1Calc = 0;
                 }
             }
-            annualPayment = monthlyPayment * 12; // Total paid in a year
 
-
-            // Generate full amortization schedule for 5 years
             let schedule = [];
             let currentBalance = loanAmount;
-            let actualMonthlyPayment = monthlyPayment; // Store the calculated monthly payment
-
-            for (let year = 1; year <= Math.min(5, loanTermYears); year++) {
+            for (let year = 1; year <= 5; year++) {
                 let yearlyInterest = 0;
                 let yearlyPrincipal = 0;
-
-                if (currentBalance <= 0.01) { // Effectively paid off
-                     schedule.push({ year, interest: 0, principal: 0, endBalance: 0, annualPaymentForYear: 0 });
+                let yearlyPaymentTotal = 0;
+                if (year > loanTermYears || currentBalance < 0.01) {
+                     schedule.push({ year, interest: 0, principal: 0, endBalance: currentBalance < 0.01 ? 0: currentBalance, annualPaymentForYear: 0 });
                      continue;
                 }
-
                 if (mortgageType === 'interestOnly') {
                     yearlyInterest = currentBalance * (annualInterestRate / 100);
                     yearlyPrincipal = 0;
-                } else { // Repayment
+                    yearlyPaymentTotal = yearlyInterest;
+                } else {
+                    let tempBalance = currentBalance;
                     for (let month = 1; month <= 12; month++) {
-                        let paymentNumOverall = (year - 1) * 12 + month;
-                        if (paymentNumOverall > numberOfPayments) break;
-
-                        let interestForMonth = currentBalance * monthlyInterestRate;
-                        let principalForMonth;
-
-                        // Is this the very last scheduled payment?
-                        if (paymentNumOverall === numberOfPayments) {
-                            principalForMonth = currentBalance; // Pay off remaining balance
-                            actualMonthlyPayment = interestForMonth + principalForMonth; // Adjust final payment
-                        } else {
-                            principalForMonth = actualMonthlyPayment - interestForMonth;
+                        const overallMonthNum = (year - 1) * 12 + month;
+                        if (overallMonthNum > numberOfPayments || tempBalance < 0.01) break;
+                        let interestForMonth = tempBalance * monthlyInterestRate;
+                        let principalForMonth = monthlyPayment - interestForMonth;
+                        if (overallMonthNum === numberOfPayments || principalForMonth > tempBalance - interestForMonth) {
+                             principalForMonth = tempBalance;
                         }
-
-                        // Safety check if balance is less than principal calculated
-                        if (currentBalance < principalForMonth && paymentNumOverall < numberOfPayments) {
-                             principalForMonth = currentBalance; // Pay what's left
-                             // actualMonthlyPayment = interestForMonth + principalForMonth; // This would change ongoing payment, not ideal.
-                                                                                      // Better to let the last payment handle it.
-                        }
-                         if (principalForMonth < 0) principalForMonth = 0; // Safety
-
+                        if (principalForMonth > tempBalance) principalForMonth = tempBalance;
+                        if (principalForMonth < 0) principalForMonth = 0;
                         yearlyInterest += interestForMonth;
                         yearlyPrincipal += principalForMonth;
-                        currentBalance -= principalForMonth;
-                         if (currentBalance < 0.01) currentBalance = 0; // Consider small balances as zero
+                        tempBalance -= principalForMonth;
+                        yearlyPaymentTotal += (interestForMonth + principalForMonth);
+                        if (tempBalance < 0.01) tempBalance = 0;
                     }
+                    currentBalance = tempBalance;
                 }
-                 schedule.push({
-                    year: year,
-                    interest: yearlyInterest,
-                    principal: yearlyPrincipal,
-                    endBalance: currentBalance,
-                    annualPaymentForYear: mortgageType === 'interestOnly' ? yearlyInterest : yearlyInterest + yearlyPrincipal
-                });
+                 schedule.push({ year, interest: yearlyInterest, principal: yearlyPrincipal, endBalance: currentBalance, annualPaymentForYear: yearlyPaymentTotal });
             }
-            // Fill remaining years in schedule if loan term is shorter than 5 years
-            for (let year = Math.min(5, loanTermYears) + 1; year <= 5; year++) {
-                 schedule.push({ year, interest: 0, principal: 0, endBalance: 0, annualPaymentForYear: 0 });
-            }
-
-
-            return { monthlyPayment: actualMonthlyPayment, annualPayment, year1AnnualInterest, year1AnnualPrincipal, schedule };
+            return { monthlyPayment: monthlyPayment, annualPayment: year1AnnualInterest + year1AnnualPrincipal, year1AnnualInterest, year1AnnualPrincipal, schedule };
         }
 
         function runCalculations() {
-            // --- Get All Input Values ---
             const propertyName = $('propertyName').value;
-            // Use rawValueForCalculation for formatted inputs
             const marketValue = rawValueForCalculation($('marketValue'));
             const purchasePrice = rawValueForCalculation($('purchasePrice'));
-            const acquisitionCosts = rawValueForCalculation($('acquisitionCosts'));
+            const otherAcquisitionCosts = rawValueForCalculation($('otherAcquisitionCosts'));
+            const stampDutyFromInput = rawValueForCalculation($('stampDutyCost'));
             const loanAmount = rawValueForCalculation($('loanAmount'));
-            const interestRate = getVal('interestRate'); // This is type=number
-            const loanTerm = getVal('loanTerm');     // This is type=number
+            const interestRate = getRawValue('interestRate');
+            const loanTerm = getRawValue('loanTerm');
             const mortgageType = getSelectVal('mortgageType');
             const grossRentalIncome = rawValueForCalculation($('grossRentalIncome'));
-            const otherIncome = rawValueForCalculation($('otherIncome'));
-            const vacancyRate = getVal('vacancyRate') / 100;
+            const vacancyRate = getRawValue('vacancyRate') / 100;
             const managementFeesValue = rawValueForCalculation($('managementFeesValue'));
             const managementFeesType = getSelectVal('managementFeesType');
             const insurance = rawValueForCalculation($('insurance'));
             const repairs = rawValueForCalculation($('repairs'));
-            const serviceCharges = rawValueForCalculation($('serviceCharges'));
             const otherOpEx = rawValueForCalculation($('otherOpEx'));
-            const incomeTaxRate = getVal('incomeTaxRate') / 100;
-            const rentGrowth = getVal('rentGrowth') / 100;
-            const expenseGrowth = getVal('expenseGrowth') / 100;
-            const valueGrowth = getVal('valueGrowth') / 100;
+            const incomeTaxRate = getRawValue('incomeTaxRate') / 100;
+            const rentGrowth = getRawValue('rentGrowth') / 100;
+            const expenseGrowth = getRawValue('expenseGrowth') / 100;
+            const valueGrowth = getRawValue('valueGrowth') / 100;
 
-            // --- Basic Calculations ---
-            const downPayment = purchasePrice - loanAmount;
-            const totalCashInvested = downPayment + acquisitionCosts;
+            const depositAmount = purchasePrice - loanAmount;
+            setInputValue('depositAmount', depositAmount, true);
 
-            // --- Mortgage Calculation (Initial & Schedule) ---
+            const totalCashInvested = depositAmount + otherAcquisitionCosts + stampDutyFromInput;
+            setHtml('totalUpfrontCashCostsDisplay', formatCurrency(totalCashInvested));
+
             const mortgage = calculateMortgage(loanAmount, interestRate, loanTerm, mortgageType);
-
-            // --- Year 1 Calculations ---
             let currentGrossRent = grossRentalIncome;
-            let currentOtherIncome = otherIncome;
-            let currentMgmtFeesValue = managementFeesValue; // Base value for year 1
+            let currentMgmtFeesValue = managementFeesValue;
             let currentInsurance = insurance;
             let currentRepairs = repairs;
-            let currentServiceCharges = serviceCharges;
             let currentOtherOpEx = otherOpEx;
             let currentMarketValue = marketValue;
 
-
             const year1MortgageData = mortgage.schedule.find(s => s.year === 1) || { interest: 0, principal: 0, annualPaymentForYear: 0 };
-            const year1Data = calculateAnnualFigures(
-                currentGrossRent, currentOtherIncome, vacancyRate,
-                currentMgmtFeesValue, managementFeesType, // Pass base value for mgmt fees
-                currentInsurance, currentRepairs, currentServiceCharges, currentOtherOpEx,
-                year1MortgageData.interest,
-                incomeTaxRate,
-                year1MortgageData.annualPaymentForYear
-            );
+            const year1Data = calculateAnnualFigures( currentGrossRent, vacancyRate, currentMgmtFeesValue, managementFeesType, currentInsurance, currentRepairs, currentOtherOpEx, year1MortgageData.interest, incomeTaxRate, year1MortgageData.annualPaymentForYear );
 
-
-            // --- Update ROI Summary Tab ---
             setHtml('summary-propertyName', propertyName || '-');
             setHtml('summary-marketValue', formatCurrency(marketValue));
             setHtml('summary-purchasePrice', formatCurrency(purchasePrice));
             setHtml('summary-loanAmount', formatCurrency(loanAmount));
-            setHtml('summary-downPayment', formatCurrency(downPayment));
-            setHtml('summary-acquisitionCosts', formatCurrency(acquisitionCosts));
+            setHtml('summary-downPayment', formatCurrency(depositAmount));
+            setHtml('summary-otherAcquisitionCosts', formatCurrency(otherAcquisitionCosts));
+            setHtml('summary-stampDutyCost', formatCurrency(stampDutyFromInput));
             setHtml('summary-totalCashInvested', formatCurrency(totalCashInvested));
-
             setHtml('summary-noi', formatCurrency(year1Data.noi));
             setHtml('summary-cfbt', formatCurrency(year1Data.cfbt));
             setHtml('summary-cfat', formatCurrency(year1Data.cfat));
-
             const capRateMarket = marketValue > 0 ? (year1Data.noi / marketValue) * 100 : 0;
             const capRatePurchase = purchasePrice > 0 ? (year1Data.noi / purchasePrice) * 100 : 0;
             const cocReturn = totalCashInvested > 0 ? (year1Data.cfat / totalCashInvested) * 100 : 0;
             const principalPaidY1 = year1MortgageData.principal;
             const simpleRoi = totalCashInvested > 0 ? ((year1Data.cfat + principalPaidY1) / totalCashInvested) * 100 : 0;
-
             setHtml('summary-capRateMarket', `${capRateMarket.toFixed(1)}%`);
             setHtml('summary-capRatePurchase', `${capRatePurchase.toFixed(1)}%`);
             setHtml('summary-cocReturn', `${cocReturn.toFixed(1)}%`);
             setHtml('summary-simpleRoi', `${simpleRoi.toFixed(1)}%`);
-
-            setHtml('summary-monthlyPayment', formatCurrency(mortgage.monthlyPayment, true)); // Show pennies for monthly
+            setHtml('summary-monthlyPayment', formatCurrency(mortgage.monthlyPayment, true));
             setHtml('summary-annualPayment', formatCurrency(year1MortgageData.annualPaymentForYear));
             setHtml('summary-principalPaid', formatCurrency(principalPaidY1));
             setHtml('summary-interestPaid', formatCurrency(year1MortgageData.interest));
 
-
-            // --- Generate 5-Year Cash Flow ---
             const cashFlowBody = $('cashFlowTableBody');
-            cashFlowBody.innerHTML = ''; // Clear previous results
+            cashFlowBody.innerHTML = '';
             let yearlyData = [];
             let cumulativeCFAT = 0;
             let finalEquity = 0;
-
             setHtml('cf-rentGrowth', (rentGrowth * 100).toFixed(1));
             setHtml('cf-expenseGrowth', (expenseGrowth * 100).toFixed(1));
             setHtml('cf-valueGrowth', (valueGrowth * 100).toFixed(1));
 
-            // Reset initial values for the loop
             currentGrossRent = grossRentalIncome;
-            currentOtherIncome = otherIncome;
-            currentMgmtFeesValue = managementFeesValue; // Base value for mgmt fees
+            currentMgmtFeesValue = managementFeesValue;
             currentInsurance = insurance;
             currentRepairs = repairs;
-            currentServiceCharges = serviceCharges;
             currentOtherOpEx = otherOpEx;
             currentMarketValue = marketValue;
 
-
             for (let year = 1; year <= 5; year++) {
-                const mortgageYearData = mortgage.schedule.find(s => s.year === year) || { interest: 0, principal: 0, endBalance: loanAmount, annualPaymentForYear: 0 };
-
-                const annualData = calculateAnnualFigures(
-                    currentGrossRent, currentOtherIncome, vacancyRate,
-                    // For management fees, if it's a fixed amount, it should also grow by expenseGrowth.
-                    // If it's percent, it grows with rent automatically.
-                    (managementFeesType === 'fixed' ? currentMgmtFeesValue : managementFeesValue), // Pass current fixed value or base % value
-                    managementFeesType,
-                    currentInsurance, currentRepairs, currentServiceCharges, currentOtherOpEx,
-                    mortgageYearData.interest,
-                    incomeTaxRate,
-                    mortgageYearData.annualPaymentForYear
-                );
-
-                yearlyData.push({
-                    year: year,
-                    ...annualData,
-                    grossScheduledIncome: annualData.gsi,
-                    vacancyLoss: annualData.vacancyLoss,
-                    effectiveGrossIncome: annualData.egi,
-                    totalOperatingExpenses: annualData.totalOpEx,
-                    mortgagePrincipalPaid: mortgageYearData.principal,
-                    mortgageInterestPaid: mortgageYearData.interest,
-                    totalMortgagePayment: mortgageYearData.annualPaymentForYear,
-                    projectedValue: currentMarketValue,
-                    remainingMortgage: mortgageYearData.endBalance,
-                    equity: currentMarketValue - mortgageYearData.endBalance
-                });
-
-                 cumulativeCFAT += annualData.cfat;
-
-                // Apply growth for next year
+                const mortgageYearData = mortgage.schedule.find(s => s.year === year) || { interest: 0, principal: 0, endBalance: (year === 1 ? loanAmount : yearlyData[year-2]?.remainingMortgage || loanAmount), annualPaymentForYear: 0 };
+                const annualData = calculateAnnualFigures( currentGrossRent, vacancyRate, (managementFeesType === 'fixed' ? currentMgmtFeesValue : managementFeesValue), managementFeesType, currentInsurance, currentRepairs, currentOtherOpEx, mortgageYearData.interest, incomeTaxRate, mortgageYearData.annualPaymentForYear );
+                yearlyData.push({ year: year, ...annualData, grossScheduledIncome: annualData.gsi, vacancyLoss: annualData.vacancyLoss, effectiveGrossIncome: annualData.egi, totalOperatingExpenses: annualData.totalOpEx, mortgagePrincipalPaid: mortgageYearData.principal, mortgageInterestPaid: mortgageYearData.interest, totalMortgagePayment: mortgageYearData.annualPaymentForYear, projectedValue: currentMarketValue, remainingMortgage: mortgageYearData.endBalance, equity: currentMarketValue - mortgageYearData.endBalance });
+                cumulativeCFAT += annualData.cfat;
                 currentGrossRent *= (1 + rentGrowth);
-                currentOtherIncome *= (1 + rentGrowth);
-                if (managementFeesType === 'fixed') {
-                    currentMgmtFeesValue *= (1 + expenseGrowth);
-                }
+                if (managementFeesType === 'fixed') currentMgmtFeesValue *= (1 + expenseGrowth);
                 currentInsurance *= (1 + expenseGrowth);
                 currentRepairs *= (1 + expenseGrowth);
-                currentServiceCharges *= (1 + expenseGrowth);
                 currentOtherOpEx *= (1 + expenseGrowth);
                 currentMarketValue *= (1 + valueGrowth);
-
-                 if (year === 5) {
-                    finalEquity = currentMarketValue - mortgageYearData.endBalance;
-                }
+                if (year === 5) finalEquity = currentMarketValue - mortgageYearData.endBalance;
             }
 
-            // --- Populate Cash Flow Table ---
             const lineItems = [
-                { key: 'grossScheduledIncome', label: 'Gross Scheduled Income', bold: false },
-                { key: 'vacancyLoss', label: 'Less: Vacancy Loss', bold: false, isNegative: true },
-                { key: 'effectiveGrossIncome', label: 'Effective Gross Income (EGI)', bold: true },
-                { key: 'spacer1', label: '', bold: false, isSpacer: true },
-                { key: 'managementFees', label: 'Management Fees', bold: false, isNegative: true },
-                { key: 'insurance', label: 'Insurance', bold: false, isNegative: true },
-                { key: 'repairs', label: 'Repairs & Maintenance', bold: false, isNegative: true },
-                { key: 'serviceCharges', label: 'Service Charges/Ground Rent', bold: false, isNegative: true },
-                { key: 'otherOpEx', label: 'Other Operating Expenses', bold: false, isNegative: true },
-                { key: 'totalOperatingExpenses', label: 'Total Operating Expenses', bold: true, isNegative: true },
-                 { key: 'spacer2', label: '', bold: false, isSpacer: true },
-                { key: 'noi', label: 'Net Operating Income (NOI)', bold: true },
-                 { key: 'spacer3', label: '', bold: false, isSpacer: true },
-                { key: 'mortgageInterestPaid', label: 'Mortgage Interest Paid', bold: false, isNegative: true },
-                { key: 'mortgagePrincipalPaid', label: 'Mortgage Principal Paid', bold: false, isNegative: true },
-                { key: 'totalMortgagePayment', label: 'Total Mortgage Payment', bold: true, isNegative: true },
-                 { key: 'spacer4', label: '', bold: false, isSpacer: true },
-                { key: 'cfbt', label: 'Cash Flow Before Tax (CFBT)', bold: true },
-                 { key: 'spacer5', label: '', bold: false, isSpacer: true },
-                { key: 'incomeTax', label: 'Income Tax Payable', bold: false, isNegative: true },
-                { key: 'cfat', label: 'Cash Flow After Tax (CFAT)', bold: true, highlightPositive: true },
-                 { key: 'spacer6', label: '', bold: false, isSpacer: true },
-                 { key: 'cumulativeCFAT', label: 'Cumulative CFAT', bold: false },
-                 { key: 'spacer7', label: '', bold: false, isSpacer: true },
-                { key: 'projectedValue', label: 'Projected Property Value', bold: false },
-                { key: 'remainingMortgage', label: 'Remaining Mortgage Balance', bold: false },
+                { key: 'grossScheduledIncome', label: 'Gross Scheduled Income' }, { key: 'vacancyLoss', label: 'Less: Vacancy Loss', isNegative: true },
+                { key: 'effectiveGrossIncome', label: 'Effective Gross Income (EGI)', bold: true }, { key: 'spacer1', label: '', isSpacer: true },
+                { key: 'managementFees', label: 'Management Fees', isNegative: true }, { key: 'insurance', label: 'Insurance', isNegative: true },
+                { key: 'repairs', label: 'Repairs & Maintenance', isNegative: true },
+                { key: 'otherOpEx', label: 'Other Operating Expenses', isNegative: true }, { key: 'totalOperatingExpenses', label: 'Total Operating Expenses', bold: true, isNegative: true },
+                { key: 'spacer2', label: '', isSpacer: true }, { key: 'noi', label: 'Net Operating Income (NOI)', bold: true },
+                { key: 'spacer3', label: '', isSpacer: true }, { key: 'mortgageInterestPaid', label: 'Mortgage Interest Paid', isNegative: true },
+                { key: 'mortgagePrincipalPaid', label: 'Mortgage Principal Paid', isNegative: true }, { key: 'totalMortgagePayment', label: 'Total Mortgage Payment', bold: true, isNegative: true },
+                { key: 'spacer4', label: '', isSpacer: true }, { key: 'cfbt', label: 'Cash Flow Before Tax (CFBT)', bold: true },
+                { key: 'spacer5', label: '', isSpacer: true }, { key: 'incomeTax', label: 'Income Tax Payable', isNegative: true },
+                { key: 'cfat', label: 'Cash Flow After Tax (CFAT)', bold: true, highlightPositive: true }, { key: 'spacer6', label: '', isSpacer: true },
+                { key: 'cumulativeCFAT', label: 'Cumulative CFAT' }, { key: 'spacer7', label: '', isSpacer: true },
+                { key: 'projectedValue', label: 'Projected Property Value' }, { key: 'remainingMortgage', label: 'Remaining Mortgage Balance' },
                 { key: 'equity', label: 'Projected Equity', bold: true },
             ];
-
-             let cumulativeCFATTracker = 0;
-
+            let cumulativeCFATTracker = 0;
             lineItems.forEach(item => {
                 const row = cashFlowBody.insertRow();
                 const labelCell = row.insertCell();
-                labelCell.innerHTML = `<span class="${item.bold ? 'font-semibold' : ''} ${item.isNegative ? 'pl-4' : ''}">${item.label}</span>`; // Indent negative sub-items slightly
-
+                labelCell.innerHTML = `<span class="${item.bold ? 'font-semibold' : ''} ${item.isNegative ? 'pl-4' : ''}">${item.label}</span>`;
                 if (item.isSpacer) {
                     for (let i = 0; i < 5; i++) row.insertCell().innerHTML = '';
-                    labelCell.colSpan = 6;
-                    labelCell.className = "py-1";
-                    return;
+                    labelCell.colSpan = 6; labelCell.className = "py-1"; return;
                 }
-
                 for (let year = 1; year <= 5; year++) {
-                    const cell = row.insertCell();
-                    cell.className = 'px-4 py-2 text-right';
-                    const data = yearlyData[year - 1];
-                    let value = data[item.key];
-
-                    if (item.key === 'cumulativeCFAT') {
-                        cumulativeCFATTracker += data.cfat; // Use the cfat from the current year's data
-                        value = cumulativeCFATTracker;
-                    }
-
+                    const cell = row.insertCell(); cell.className = 'px-4 py-2 text-right';
+                    const data = yearlyData[year - 1]; let value = data[item.key];
+                    if (item.key === 'cumulativeCFAT') { cumulativeCFATTracker += data.cfat; value = cumulativeCFATTracker; }
                     if (typeof value === 'number') {
                         let displayValue = formatCurrency(value);
-                        if (item.isNegative && value !== 0) {
-                            displayValue = `(${formatCurrency(Math.abs(value))})`;
-                            cell.classList.add('text-red-600');
-                        } else if (item.highlightPositive && value > 0) {
-                             cell.classList.add('text-green-700', 'font-semibold');
-                        } else if (value < 0 && !item.isNegative) { // e.g. CFBT can be negative
-                             cell.classList.add('text-red-600');
-                             displayValue = `(${formatCurrency(Math.abs(value))})`; // Show with parentheses
-                        }
+                        if (item.isNegative && value !== 0) { displayValue = `(${formatCurrency(Math.abs(value))})`; cell.classList.add('text-red-600'); }
+                        else if (item.highlightPositive && value > 0) { cell.classList.add('text-green-700', 'font-semibold'); }
+                        else if (value < 0 && !item.isNegative) { cell.classList.add('text-red-600'); displayValue = `(${formatCurrency(Math.abs(value))})`; }
                         cell.innerHTML = displayValue;
-                    } else {
-                        cell.innerHTML = '-';
-                    }
+                    } else { cell.innerHTML = '-'; }
                 }
             });
-
-             setHtml('summary-totalCFAT', formatCurrency(cumulativeCFAT));
-             setHtml('summary-equityY5', formatCurrency(finalEquity));
+            setHtml('summary-totalCFAT', formatCurrency(cumulativeCFAT));
+            setHtml('summary-equityY5', formatCurrency(finalEquity));
         }
 
-
-        function calculateAnnualFigures(grossRent, otherIncome, vacancyRate, mgmtFeesVal, mgmtFeesType, currentInsurance, currentRepairs, currentServiceCharges, currentOtherOpEx, interestPaid, taxRate, annualMortgagePaymentForYear) {
-            const gsi = grossRent + otherIncome;
+        function calculateAnnualFigures(grossRent, vacancyRate, mgmtFeesVal, mgmtFeesType, currentInsurance, currentRepairs, currentOtherOpEx, interestPaid, taxRate, annualMortgagePaymentForYear) {
+            const gsi = grossRent;
             const vacancyLoss = grossRent * vacancyRate;
             const egi = gsi - vacancyLoss;
-
             let managementFeesCalculated = 0;
-            if (mgmtFeesType === 'percent') {
-                // mgmtFeesVal is the percentage (e.g., 10 for 10%)
-                managementFeesCalculated = egi * (mgmtFeesVal / 100);
-            } else {
-                // mgmtFeesVal is the fixed amount for the current year (already grown)
-                managementFeesCalculated = mgmtFeesVal;
-            }
-
-            const totalOpEx = managementFeesCalculated + currentInsurance + currentRepairs + currentServiceCharges + currentOtherOpEx;
+            if (mgmtFeesType === 'percent') { managementFeesCalculated = egi * (mgmtFeesVal / 100); }
+            else { managementFeesCalculated = mgmtFeesVal; }
+            const totalOpEx = managementFeesCalculated + currentInsurance + currentRepairs + currentOtherOpEx;
             const noi = egi - totalOpEx;
             const cfbt = noi - annualMortgagePaymentForYear;
             const taxableIncome = Math.max(0, noi - interestPaid);
             const incomeTax = taxableIncome * taxRate;
             const cfat = cfbt - incomeTax;
-
-            return {
-                gsi, vacancyLoss, egi,
-                managementFees: managementFeesCalculated, // Store the calculated fee
-                insurance: currentInsurance,
-                repairs: currentRepairs,
-                serviceCharges: currentServiceCharges,
-                otherOpEx: currentOtherOpEx,
-                totalOpEx, noi, interestPaid, cfbt, incomeTax, cfat
-            };
+            return { gsi, vacancyLoss, egi, managementFees: managementFeesCalculated, insurance: currentInsurance, repairs: currentRepairs, otherOpEx: currentOtherOpEx, totalOpEx, noi, interestPaid, cfbt, incomeTax, cfat };
         }
 
-        // --- Initial Setup ---
+        // --- Initial Setup & Reset ---
+        const initialDefaults = {
+            propertyName: "Example Property",
+            marketValue: 1500000,
+            discountToMarketValue: 25,
+            loanToValue: 90,
+            otherAcquisitionCosts: 10000,
+            grossRentalIncome: 0, // Will be calculated initially
+            interestRate: 6.0,
+            loanTerm: 25,
+            mortgageType: "interestOnly",
+            vacancyRate: 5,
+            managementFeesValue: 10,
+            managementFeesType: "percent",
+            insurance: 3000,
+            repairs: 1000,
+            otherOpEx: 250,
+            incomeTaxRate: 19,
+            rentGrowth: 3.0,
+            expenseGrowth: 2.5,
+            valueGrowth: 4.0,
+            sdltPropertyType: "residential",
+            sdltResidentialScenario: "higher"
+        };
+
+        function resetAllToDefaults() {
+            if (!confirm("Are you sure you want to reset all inputs to their default values?")) {
+                return;
+            }
+            userManuallySetGrossRentalIncome = false; // Reset manual override flag
+
+            setInputValue('propertyName', initialDefaults.propertyName);
+            setInputValue('marketValue', initialDefaults.marketValue, true);
+            setInputValue('discountToMarketValue', initialDefaults.discountToMarketValue);
+            setInputValue('loanToValue', initialDefaults.loanToValue);
+            setInputValue('otherAcquisitionCosts', initialDefaults.otherAcquisitionCosts, true);
+            setInputValue('interestRate', initialDefaults.interestRate);
+            setInputValue('loanTerm', initialDefaults.loanTerm);
+            $('mortgageType').value = initialDefaults.mortgageType;
+            // Gross Rental Income will be set by the chain starting with handleMarketValueChange
+            setInputValue('vacancyRate', initialDefaults.vacancyRate);
+            setInputValue('managementFeesValue', initialDefaults.managementFeesValue, true);
+            $('managementFeesType').value = initialDefaults.managementFeesType;
+            setInputValue('insurance', initialDefaults.insurance, true);
+            setInputValue('repairs', initialDefaults.repairs, true);
+            setInputValue('otherOpEx', initialDefaults.otherOpEx, true);
+            setInputValue('incomeTaxRate', initialDefaults.incomeTaxRate);
+            setInputValue('rentGrowth', initialDefaults.rentGrowth);
+            setInputValue('expenseGrowth', initialDefaults.expenseGrowth);
+            setInputValue('valueGrowth', initialDefaults.valueGrowth);
+            $('sdltPropertyType').value = initialDefaults.sdltPropertyType;
+            const higherRateRadio = $('sdltResidentialHigher');
+            if (higherRateRadio) higherRateRadio.checked = true;
+            $('sdltPropertyType').dispatchEvent(new Event('change')); // Ensure SDLT options refresh
+
+            handleMarketValueChange(); // This kicks off the full recalculation chain
+        }
+
+
         document.addEventListener('DOMContentLoaded', () => {
-            const numberInputs = document.querySelectorAll('input.number-input');
-            numberInputs.forEach(input => {
-                input.addEventListener('blur', formatInputAsNumber); // Format on blur
-                input.addEventListener('input', (event) => { // Allow typing numbers and one decimal
-                    // Basic filtering, can be improved
-                    // event.target.value = event.target.value.replace(/[^0-9.,]/g, '');
-                });
-                // Initial format for pre-filled values
-                formatInputAsNumber({target: input});
-            });
+            // Set initial values using the reset function logic but without confirmation
+            userManuallySetGrossRentalIncome = false;
+            setInputValue('propertyName', initialDefaults.propertyName);
+            setInputValue('marketValue', initialDefaults.marketValue, true);
+            setInputValue('discountToMarketValue', initialDefaults.discountToMarketValue);
+            setInputValue('loanToValue', initialDefaults.loanToValue);
+            setInputValue('otherAcquisitionCosts', initialDefaults.otherAcquisitionCosts, true);
+            setInputValue('interestRate', initialDefaults.interestRate);
+            setInputValue('loanTerm', initialDefaults.loanTerm);
+            $('mortgageType').value = initialDefaults.mortgageType;
+            setInputValue('vacancyRate', initialDefaults.vacancyRate);
+            setInputValue('managementFeesValue', initialDefaults.managementFeesValue, true);
+            $('managementFeesType').value = initialDefaults.managementFeesType;
+            setInputValue('insurance', initialDefaults.insurance, true);
+            setInputValue('repairs', initialDefaults.repairs, true);
+            setInputValue('otherOpEx', initialDefaults.otherOpEx, true);
+            setInputValue('incomeTaxRate', initialDefaults.incomeTaxRate);
+            setInputValue('rentGrowth', initialDefaults.rentGrowth);
+            setInputValue('expenseGrowth', initialDefaults.expenseGrowth);
+            setInputValue('valueGrowth', initialDefaults.valueGrowth);
+            $('sdltPropertyType').value = initialDefaults.sdltPropertyType;
+            const higherRateRadio = $('sdltResidentialHigher');
+            if (higherRateRadio) higherRateRadio.checked = true;
 
 
-            const allInputs = document.querySelectorAll('#content-inputs input, #content-inputs select');
-            allInputs.forEach(input => {
-                input.addEventListener('change', runCalculations);
+            // --- Event Listeners ---
+            $('marketValue').addEventListener('blur', (e) => { formatInputAsNumber(e); handleMarketValueChange(); });
+            $('marketValue').addEventListener('input', (e) => { formatInputAsNumber(e); });
+
+            $('discountToMarketValue').addEventListener('change', handleDiscountChange);
+            $('loanToValue').addEventListener('change', handleLTVChange);
+
+            $('grossRentalIncome').addEventListener('input', handleGrossRentalIncomeInput);
+            $('grossRentalIncome').addEventListener('blur', handleGrossRentalIncomeBlur);
+
+
+            const standardNumberInputs = ['otherAcquisitionCosts', 'managementFeesValue', 'insurance', 'repairs', 'otherOpEx'];
+            standardNumberInputs.forEach(id => {
+                const el = $(id);
+                el.addEventListener('blur', (e) => { formatInputAsNumber(e); runCalculations(); });
+                el.addEventListener('input', (e) => { formatInputAsNumber(e); });
             });
-            runCalculations();
+
+            const standardNumberTypeInputs = ['interestRate', 'loanTerm', 'vacancyRate', 'incomeTaxRate', 'rentGrowth', 'expenseGrowth', 'valueGrowth'];
+            standardNumberTypeInputs.forEach(id => {
+                $(id).addEventListener('change', runCalculations);
+            });
+
+            ['mortgageType', 'managementFeesType'].forEach(id => {
+                $(id).addEventListener('change', runCalculations);
+            });
+
+            $('sdltPropertyType').addEventListener('change', toggleResidentialOptions);
+            document.querySelectorAll('input[name="sdltResidentialScenario"]').forEach(radio => {
+                radio.addEventListener('change', () => calculateAndDisplaySDLT(true));
+            });
+
+            toggleResidentialOptions();
+            handleMarketValueChange(); // Initial calculation chain
         });
-
     </script>
-
 </body>
 </html>
