@@ -59,70 +59,77 @@
             cursor: not-allowed;
         }
 
+        /* Mobile specific font and layout adjustments */
+        @media (max-width: 767px) {
+            body {
+                font-size: 13px; /* Further reduced base font size for mobile */
+                padding: 0.4rem !important;
+            }
+            .container {
+                padding: 0.6rem !important;
+            }
+            h1.text-2xl, h1.md\:text-3xl { font-size: 1.1rem; } /* Further reduced H1 */
+            h2.text-lg, h2.text-xl { font-size: 1.0rem; } /* Further reduced H2 */
+            h3.text-lg { font-size: 0.9rem; } /* Further reduced H3 */
+
+            .text-sm { font-size: 0.75rem; } /* Adjust general small text */
+            label.text-sm { font-size: 0.75rem; } /* Labels */
+            p.text-sm { font-size: 0.75rem; } /* Paragraphs */
+
+            .text-xs { font-size: 0.6rem; } /* Further reduced micro text */
+            button.text-sm { font-size: 0.75rem; }
+
+            /* Adjust padding for input groups on mobile */
+            .space-y-4 {
+                padding: 0.4rem !important;
+            }
+             /* Make table cells slightly smaller on mobile */
+            #cashFlowTableBody td, #cashFlowTableBody th,
+            .min-w-full thead th {
+                font-size: 0.65rem; /* Further reduced table font */
+                padding-left: 0.15rem;
+                padding-right: 0.15rem;
+                padding-top: 0.2rem;
+                padding-bottom: 0.2rem;
+            }
+            /* Adjust tab button padding for mobile */
+            nav[aria-label="Tabs"] button {
+                padding-left: 0.1rem;
+                padding-right: 0.1rem;
+                font-size: 0.75rem; /* Further reduced tab button font */
+            }
+            /* Reduce font size for input fields */
+            input[type="text"], input[type="number"], select {
+                font-size: 0.8rem;
+                padding-top: 0.4rem;
+                padding-bottom: 0.4rem;
+            }
+            /* Reduce font size for Total Upfront Cash Costs */
+            #totalUpfrontCashCostsDisplay {
+                font-size: 1.1rem;
+            }
+        }
+
+
         /* Print specific styles */
         @media print {
             body {
-                background-color: #fff; /* White background for printing */
-                font-size: 10pt; /* Adjust font size for print */
+                background-color: #fff;
+                font-size: 10pt;
             }
-            .no-print {
-                display: none !important; /* Hide elements marked with no-print */
-            }
-            .container {
-                max-width: 100% !important;
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            .tab-content { /* Ensure all tab content is visible for printing */
-                display: block !important;
-                opacity: 1 !important;
-                height: auto !important;
-                page-break-before: auto;
-                margin-bottom: 1rem; /* Add some space between printed tabs */
-            }
-             .grid { /* Simplify grid for printing if needed */
-                grid-template-columns: repeat(1, minmax(0, 1fr)) !important; /* Stack columns for print */
-            }
-            h1, h2, h3 {
-                page-break-after: avoid; /* Avoid breaking after headings */
-            }
-            table {
-                width: 100% !important;
-                page-break-inside: auto; /* Allow table to break across pages if necessary */
-            }
-            tr {
-                page-break-inside: avoid; /* Try to keep rows on the same page */
-                page-break-after: auto;
-            }
-            .p-4, .p-6, .mb-6, .mt-6, .space-y-3, .space-y-4, .space-y-6 { /* Adjust spacing for print */
-                padding: 0.25rem !important;
-                margin-bottom: 0.25rem !important;
-                margin-top: 0.25rem !important;
-            }
-             .border, .shadow-lg, .rounded-lg, .bg-gray-50 { /* Remove cosmetic styles */
-                border: none !important;
-                box-shadow: none !important;
-                border-radius: 0 !important;
-                background-color: transparent !important;
-            }
-            #content-inputs .grid > div, #content-stampduty .grid > div { /* Add a light border to input sections for clarity in print */
-                border: 1px solid #e5e7eb !important;
-                padding: 0.5rem !important;
-                margin-bottom: 0.5rem !important;
-            }
-            #cashFlowTableBody td, #cashFlowTableBody th {
-                 font-size: 9pt; /* Smaller font for table data */
-            }
-             #sdltResultContainer {
-                border: 1px solid #ccc !important;
-                padding: 0.5rem !important;
-            }
-            .read-only-input { /* Ensure read-only inputs look normal in print */
-                background-color: #fff !important;
-                border: 1px solid #ccc !important; /* Add a light border for clarity */
-            }
+            .no-print { display: none !important; }
+            .container { max-width: 100% !important; box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+            .tab-content { display: block !important; opacity: 1 !important; height: auto !important; page-break-before: auto; margin-bottom: 1rem; }
+            .grid { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+            h1, h2, h3 { page-break-after: avoid; }
+            table { width: 100% !important; page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            .p-4, .p-6, .mb-6, .mt-6, .space-y-3, .space-y-4, .space-y-6 { padding: 0.25rem !important; margin-bottom: 0.25rem !important; margin-top: 0.25rem !important; }
+            .border, .shadow-lg, .rounded-lg, .bg-gray-50 { border: none !important; box-shadow: none !important; border-radius: 0 !important; background-color: transparent !important; }
+            #content-inputs .grid > div, #content-stampduty .grid > div { border: 1px solid #e5e7eb !important; padding: 0.5rem !important; margin-bottom: 0.5rem !important; }
+            #cashFlowTableBody td, #cashFlowTableBody th { font-size: 9pt; }
+            #sdltResultContainer { border: 1px solid #ccc !important; padding: 0.5rem !important; }
+            .read-only-input { background-color: #fff !important; border: 1px solid #ccc !important; }
         }
     </style>
 </head>
@@ -506,9 +513,9 @@
             const newPurchasePrice = marketVal * (1 - (discountPercent / 100));
             setInputValue('purchasePrice', newPurchasePrice, true);
             setInputValue('sdltPurchasePrice', newPurchasePrice, true);
-            updateCalculatedLoanAmount(); // Chain update to loan amount
-            updateGrossRentalIncomeDefault(); // Chain update to gross rental income
-            calculateAndDisplaySDLT(true); // This will also call runCalculations
+            updateCalculatedLoanAmount();
+            updateGrossRentalIncomeDefault();
+            calculateAndDisplaySDLT(true);
         }
 
         function handleLTVChange() {
@@ -528,34 +535,34 @@
             const loanAmt = rawValueForCalculation($('loanAmount'));
             const deposit = purchaseP - loanAmt;
             setInputValue('depositAmount', deposit, true);
-            runCalculations(); // Final step in this property/loan chain
+            runCalculations();
         }
 
         function handleGrossRentalIncomeInput(event) {
-            formatInputAsNumber(event); // Format first
+            formatInputAsNumber(event);
             userManuallySetGrossRentalIncome = event.target.value.trim() !== "";
-            runCalculations(); // Recalculate if manually changed
+            runCalculations();
         }
          function handleGrossRentalIncomeBlur(event) {
-            formatInputAsNumber(event); // Format first
+            formatInputAsNumber(event);
             if (event.target.value.trim() === "") {
                 userManuallySetGrossRentalIncome = false;
-                updateGrossRentalIncomeDefault(); // Revert to default if cleared
+                updateGrossRentalIncomeDefault(); // This will also trigger runCalculations via its chain
             } else {
                  userManuallySetGrossRentalIncome = true;
+                 runCalculations(); // If manually set, just run calcs
             }
-            runCalculations();
         }
 
 
         function updateGrossRentalIncomeDefault() {
             if (!userManuallySetGrossRentalIncome) {
                 const purchaseP = rawValueForCalculation($('purchasePrice'));
-                const newGrossRentalIncome = purchaseP * 0.10; // 10% of purchase price
+                const newGrossRentalIncome = purchaseP * 0.10;
                 setInputValue('grossRentalIncome', newGrossRentalIncome, true);
             }
-            // No need to call runCalculations here as this function is typically called
-            // as part of a chain that will end with runCalculations.
+            // runCalculations() will be called by the function that triggers this update
+            // (e.g., updateCalculatedPurchasePrice -> ... -> runCalculations)
         }
 
 
@@ -639,13 +646,7 @@
 
             if (type === 'residential') {
                 // Rates from 1 April 2025
-                const newStandardRates = [
-                    { threshold: 0, rate: 0 },
-                    { threshold: 125000, rate: 0.02 },
-                    { threshold: 250000, rate: 0.05 },
-                    { threshold: 925000, rate: 0.10 },
-                    { threshold: 1500000, rate: 0.12 }
-                ];
+                const surchargeRate = 0.05; // Updated Surcharge to 5%
 
                 let isFTBEligible = false;
                 if (resScenario === 'ftb' && price <= 625000) {
@@ -661,29 +662,35 @@
                     }
                 } else {
                     // Standard or Higher Rates using new 2025 bands
-                    const surcharge = (resScenario === 'higher' && price >= 40000) ? 0.03 : 0;
-                    let remainingPrice = price;
-                    let previousThreshold = 0;
-
-                    for (let i = newStandardRates.length - 1; i >= 0; i--) {
-                        if (price > newStandardRates[i].threshold) {
-                            tax += (price - newStandardRates[i].threshold) * (newStandardRates[i].rate + surcharge);
-                            if (i > 0) { // Subtract the already taxed portion for the next lower band
-                                tax -= (price - newStandardRates[i].threshold) * (newStandardRates[i-1].rate + surcharge);
-                            }
-                        }
-                    }
-                     // Simpler way to apply new tiered rates:
-                    tax = 0; // Reset tax for clearer tiered calculation
+                    const applySurcharge = (resScenario === 'higher' && price >= 40000);
                     let tempPrice = price;
 
-                    if (tempPrice > 1500000) { tax += (tempPrice - 1500000) * (0.12 + surcharge); tempPrice = 1500000; }
-                    if (tempPrice > 925000)  { tax += (tempPrice - 925000)  * (0.10 + surcharge); tempPrice = 925000;  }
-                    if (tempPrice > 250000)  { tax += (tempPrice - 250000)  * (0.05 + surcharge); tempPrice = 250000;  }
-                    if (tempPrice > 125000)  { tax += (tempPrice - 125000)  * (0.02 + surcharge); tempPrice = 125000;  }
-                    // Up to 125,000 is 0% + surcharge
-                    tax += tempPrice * (0.00 + surcharge);
+                    // Tiered calculation for standard rates
+                    let standardTax = 0;
+                    if (tempPrice > 1500000) { standardTax += (tempPrice - 1500000) * 0.12; tempPrice = 1500000; }
+                    if (tempPrice > 925000)  { standardTax += (tempPrice - 925000)  * 0.10; tempPrice = 925000;  }
+                    if (tempPrice > 250000)  { standardTax += (tempPrice - 250000)  * 0.05; tempPrice = 250000;  }
+                    if (tempPrice > 125000)  { standardTax += (tempPrice - 125000)  * 0.02; tempPrice = 125000;  }
+                    // Up to 125,000 is 0%
 
+                    if (applySurcharge) {
+                        tax = price * surchargeRate; // Calculate surcharge on the entire price
+                        // For properties where standard rate is also due (i.e. over £125k for higher rate scenarios,
+                        // or any price if FTB relief doesn't apply and it's not higher rate but standard)
+                        // The surcharge is an *additional* amount.
+                        // The current HMRC guidance suggests the surcharge applies to each band.
+                        // Let's recalculate applying surcharge to each band's rate.
+                        tax = 0; // Reset for band-by-band surcharge application
+                        tempPrice = price;
+                        if (tempPrice > 1500000) { tax += (tempPrice - 1500000) * (0.12 + surchargeRate); tempPrice = 1500000; }
+                        if (tempPrice > 925000)  { tax += (tempPrice - 925000)  * (0.10 + surchargeRate); tempPrice = 925000;  }
+                        if (tempPrice > 250000)  { tax += (tempPrice - 250000)  * (0.05 + surchargeRate); tempPrice = 250000;  }
+                        if (tempPrice > 125000)  { tax += (tempPrice - 125000)  * (0.02 + surchargeRate); tempPrice = 125000;  }
+                        tax += tempPrice * (0.00 + surchargeRate); // Surcharge on the 0% band portion
+
+                    } else {
+                        tax = standardTax; // No surcharge, just standard rates
+                    }
 
                     if (resScenario === 'higher' && price < 40000) {
                         tax = 0; // No higher rate SDLT if property is less than £40,000
@@ -796,7 +803,7 @@
             const valueGrowth = getRawValue('valueGrowth') / 100;
 
             const depositAmount = purchasePrice - loanAmount;
-            setInputValue('depositAmount', depositAmount, true);
+            // setInputValue('depositAmount', depositAmount, true); // Already set by its own update function
 
             const totalCashInvested = depositAmount + otherAcquisitionCosts + stampDutyFromInput;
             setHtml('totalUpfrontCashCostsDisplay', formatCurrency(totalCashInvested));
@@ -932,7 +939,7 @@
             discountToMarketValue: 25,
             loanToValue: 90,
             otherAcquisitionCosts: 10000,
-            grossRentalIncome: 0, // Will be calculated initially
+            // grossRentalIncome will be calculated based on purchase price
             interestRate: 6.0,
             loanTerm: 25,
             mortgageType: "interestOnly",
@@ -947,68 +954,57 @@
             expenseGrowth: 2.5,
             valueGrowth: 4.0,
             sdltPropertyType: "residential",
-            sdltResidentialScenario: "higher"
+            sdltResidentialScenario: "higher" // Default SDLT scenario
         };
+
+        function applyInitialDefaults() {
+            userManuallySetGrossRentalIncome = false; // Ensure this is reset
+
+            setInputValue('propertyName', initialDefaults.propertyName);
+            setInputValue('marketValue', initialDefaults.marketValue, true);
+            setInputValue('discountToMarketValue', initialDefaults.discountToMarketValue);
+            setInputValue('loanToValue', initialDefaults.loanToValue);
+            setInputValue('otherAcquisitionCosts', initialDefaults.otherAcquisitionCosts, true);
+            setInputValue('interestRate', initialDefaults.interestRate);
+            setInputValue('loanTerm', initialDefaults.loanTerm);
+            $('mortgageType').value = initialDefaults.mortgageType;
+            setInputValue('vacancyRate', initialDefaults.vacancyRate);
+            setInputValue('managementFeesValue', initialDefaults.managementFeesValue, true); // Format as number
+            $('managementFeesType').value = initialDefaults.managementFeesType;
+            setInputValue('insurance', initialDefaults.insurance, true);
+            setInputValue('repairs', initialDefaults.repairs, true);
+            setInputValue('otherOpEx', initialDefaults.otherOpEx, true);
+            setInputValue('incomeTaxRate', initialDefaults.incomeTaxRate);
+            setInputValue('rentGrowth', initialDefaults.rentGrowth);
+            setInputValue('expenseGrowth', initialDefaults.expenseGrowth);
+            setInputValue('valueGrowth', initialDefaults.valueGrowth);
+
+            // SDLT Tab Defaults
+            $('sdltPropertyType').value = initialDefaults.sdltPropertyType;
+            const higherRateRadio = $('sdltResidentialHigher'); // Ensure this ID matches your HTML
+            if (higherRateRadio) higherRateRadio.checked = true;
+            else { // Fallback if ID is different or element not found
+                const standardRateRadio = $('sdltResidentialStandard');
+                if(standardRateRadio) standardRateRadio.checked = true;
+            }
+             // Trigger change on sdltPropertyType to ensure options visibility and initial calc
+            $('sdltPropertyType').dispatchEvent(new Event('change'));
+
+
+            // This will kick off the chain: marketValue -> purchasePrice -> loanAmount -> deposit -> grossRentalIncome -> SDLT -> runCalculations
+            handleMarketValueChange();
+        }
 
         function resetAllToDefaults() {
             if (!confirm("Are you sure you want to reset all inputs to their default values?")) {
                 return;
             }
-            userManuallySetGrossRentalIncome = false; // Reset manual override flag
-
-            setInputValue('propertyName', initialDefaults.propertyName);
-            setInputValue('marketValue', initialDefaults.marketValue, true);
-            setInputValue('discountToMarketValue', initialDefaults.discountToMarketValue);
-            setInputValue('loanToValue', initialDefaults.loanToValue);
-            setInputValue('otherAcquisitionCosts', initialDefaults.otherAcquisitionCosts, true);
-            setInputValue('interestRate', initialDefaults.interestRate);
-            setInputValue('loanTerm', initialDefaults.loanTerm);
-            $('mortgageType').value = initialDefaults.mortgageType;
-            // Gross Rental Income will be set by the chain starting with handleMarketValueChange
-            setInputValue('vacancyRate', initialDefaults.vacancyRate);
-            setInputValue('managementFeesValue', initialDefaults.managementFeesValue, true);
-            $('managementFeesType').value = initialDefaults.managementFeesType;
-            setInputValue('insurance', initialDefaults.insurance, true);
-            setInputValue('repairs', initialDefaults.repairs, true);
-            setInputValue('otherOpEx', initialDefaults.otherOpEx, true);
-            setInputValue('incomeTaxRate', initialDefaults.incomeTaxRate);
-            setInputValue('rentGrowth', initialDefaults.rentGrowth);
-            setInputValue('expenseGrowth', initialDefaults.expenseGrowth);
-            setInputValue('valueGrowth', initialDefaults.valueGrowth);
-            $('sdltPropertyType').value = initialDefaults.sdltPropertyType;
-            const higherRateRadio = $('sdltResidentialHigher');
-            if (higherRateRadio) higherRateRadio.checked = true;
-            $('sdltPropertyType').dispatchEvent(new Event('change')); // Ensure SDLT options refresh
-
-            handleMarketValueChange(); // This kicks off the full recalculation chain
+            applyInitialDefaults();
         }
 
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Set initial values using the reset function logic but without confirmation
-            userManuallySetGrossRentalIncome = false;
-            setInputValue('propertyName', initialDefaults.propertyName);
-            setInputValue('marketValue', initialDefaults.marketValue, true);
-            setInputValue('discountToMarketValue', initialDefaults.discountToMarketValue);
-            setInputValue('loanToValue', initialDefaults.loanToValue);
-            setInputValue('otherAcquisitionCosts', initialDefaults.otherAcquisitionCosts, true);
-            setInputValue('interestRate', initialDefaults.interestRate);
-            setInputValue('loanTerm', initialDefaults.loanTerm);
-            $('mortgageType').value = initialDefaults.mortgageType;
-            setInputValue('vacancyRate', initialDefaults.vacancyRate);
-            setInputValue('managementFeesValue', initialDefaults.managementFeesValue, true);
-            $('managementFeesType').value = initialDefaults.managementFeesType;
-            setInputValue('insurance', initialDefaults.insurance, true);
-            setInputValue('repairs', initialDefaults.repairs, true);
-            setInputValue('otherOpEx', initialDefaults.otherOpEx, true);
-            setInputValue('incomeTaxRate', initialDefaults.incomeTaxRate);
-            setInputValue('rentGrowth', initialDefaults.rentGrowth);
-            setInputValue('expenseGrowth', initialDefaults.expenseGrowth);
-            setInputValue('valueGrowth', initialDefaults.valueGrowth);
-            $('sdltPropertyType').value = initialDefaults.sdltPropertyType;
-            const higherRateRadio = $('sdltResidentialHigher');
-            if (higherRateRadio) higherRateRadio.checked = true;
-
+            applyInitialDefaults(); // Set all initial values and trigger calculations
 
             // --- Event Listeners ---
             $('marketValue').addEventListener('blur', (e) => { formatInputAsNumber(e); handleMarketValueChange(); });
@@ -1042,8 +1038,9 @@
                 radio.addEventListener('change', () => calculateAndDisplaySDLT(true));
             });
 
-            toggleResidentialOptions();
-            handleMarketValueChange(); // Initial calculation chain
+            // Initial UI setup and calculations are now handled by applyInitialDefaults -> handleMarketValueChange
+            // toggleResidentialOptions(); // Called by applyInitialDefaults via sdltPropertyType change
+            // handleMarketValueChange(); // Called by applyInitialDefaults
         });
     </script>
 </body>
